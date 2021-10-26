@@ -58,3 +58,18 @@ uint32_t ff_inv(const uint32_t a) {
   uint32_t res = ff_mult(res_m, res_s);
   return res;
 }
+
+uint32_t ff_div(const uint32_t a, const uint32_t b) {
+  if (b == 0) {
+    throw std::invalid_argument(
+        "no multiplicative inverse of additive identity");
+  }
+
+  if (a == 0) {
+    return 0;
+  }
+
+  uint32_t b_inv = ff_inv(b);
+  uint32_t res = ff_mult(a, b_inv);
+  return res;
+}

@@ -27,6 +27,12 @@ uint32_t ff_neg(const uint32_t a);
 // while respecting field rules
 uint32_t ff_mult(const uint32_t a, const uint32_t b);
 
-// inverts a field element, given that it's not
+// inverts a field element i.e. finds multiplicative
+// inverse of it, given that it's not
 // additive identity of field
 uint32_t ff_inv(const uint32_t a);
+
+// divides one field element by another one, which is nothing
+// but multiplying numerator with multiplicative inverse of
+// denominator
+uint32_t ff_div(const uint32_t a, const uint32_t b)
