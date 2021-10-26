@@ -83,11 +83,10 @@ uint32_t ff_pow(const uint32_t a, const int32_t b) {
   }
 
   uint32_t a_ = a;
-  uint32_t b_ = 0;
+  uint32_t b_ = b < 0 ? std::abs(b) : (uint32_t)b;
   if (b < 0) {
     a_ = ff_inv(a);
   }
-  b_ = std::abs(b);
 
   uint32_t res_s = a_;
   uint32_t res_m = 1;
