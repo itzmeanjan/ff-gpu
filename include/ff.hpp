@@ -1,7 +1,10 @@
 #include <CL/sycl.hpp>
 
+// extension field of which prime number
 inline constexpr uint32_t CHARACTERISTIC = 0b10;
+// maximum degree of field polynomial
 inline constexpr uint32_t DEGREE = 0b100000;
+// number of elements present in field
 inline constexpr uint32_t ORDER = CHARACTERISTIC << (DEGREE - 0b1);
 // irreducible polynomial for 2**32 field:
 // x^32 + x^15 + x^9 + x^7 + x^4 + x^3 + 1
@@ -23,3 +26,7 @@ uint32_t ff_neg(const uint32_t a);
 // multiplies two finite field elements
 // while respecting field rules
 uint32_t ff_mult(const uint32_t a, const uint32_t b);
+
+// inverts a field element, given that it's not
+// additive identity of field
+uint32_t ff_inv(const uint32_t a);

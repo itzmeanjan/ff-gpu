@@ -1,4 +1,5 @@
 #include "ff.hpp"
+#include <stdexcept>
 
 using namespace sycl;
 
@@ -26,10 +27,34 @@ uint32_t ff_mult(const uint32_t a, const uint32_t b) {
     b_ >>= 1;
     a_ <<= 1;
 
-    if(a_ >= ORDER) {
+    if (a_ >= ORDER) {
       a_ ^= IRREDUCIBLE_POLY;
     }
   }
 
   return c;
+}
+
+uint32_t ff_inv(const uint32_t a) {
+  if (a == 0) {
+    throw std::invalid_argument(
+        "no multiplicative inverse of additive identity");
+  }
+
+  uint32_t exp = ORDER - 0b10;
+  uint32_t res_s = a;
+  uint32_t res_m = 1;
+
+  while (exp > 1) {
+    if (exp % 2 == 0) {
+      res_s = ff_mult(res_s, res_s);
+      exp /= 2;
+    } else {
+      res_m = ff_mult(res_m, res_s);
+      exp -= 1;
+    }
+  }
+
+  uint32_t res = ff_mult(res_m, res_s);
+  return res;
 }
