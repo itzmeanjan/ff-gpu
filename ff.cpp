@@ -8,7 +8,7 @@ uint32_t ff_sub(const uint32_t a, const uint32_t b) { return a ^ b; }
 uint32_t ff_neg(const uint32_t a) { return a; }
 
 uint32_t ff_mult(const uint32_t a, const uint32_t b) {
-  uint32_t a_ = a;
+  uint64_t a_ = a;
   uint32_t b_ = b;
   uint32_t c = 0;
 
@@ -19,7 +19,7 @@ uint32_t ff_mult(const uint32_t a, const uint32_t b) {
 
   while (b_ > 0) {
     if (b_ & 0b1) {
-      c ^= a_;
+      c = c ^ (uint32_t)a_;
     }
 
     b_ >>= 1;

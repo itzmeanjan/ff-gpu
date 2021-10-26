@@ -5,10 +5,10 @@ inline constexpr uint32_t CHARACTERISTIC = 0b10;
 // maximum degree of field polynomial
 inline constexpr uint32_t DEGREE = 0b100000;
 // number of elements present in field
-inline constexpr uint32_t ORDER = CHARACTERISTIC << (DEGREE - 0b1);
+inline constexpr uint64_t ORDER = (uint64_t)CHARACTERISTIC << (DEGREE - 0b1);
 // irreducible polynomial for 2**32 field:
 // x^32 + x^15 + x^9 + x^7 + x^4 + x^3 + 1
-inline constexpr uint32_t IRREDUCIBLE_POLY =
+inline constexpr uint64_t IRREDUCIBLE_POLY =
     0b100000000000000001000001010011001;
 
 // adds two finite field elements
