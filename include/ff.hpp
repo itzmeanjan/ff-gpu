@@ -1,4 +1,4 @@
-#include <CL/sycl.hpp>
+#include <cstdint>
 
 // extension field of which prime number
 inline constexpr uint32_t CHARACTERISTIC = 0b10;
