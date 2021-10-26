@@ -73,3 +73,37 @@ uint32_t ff_div(const uint32_t a, const uint32_t b) {
   uint32_t res = ff_mult(a, b_inv);
   return res;
 }
+
+uint32_t ff_pow(const uint32_t a, const int32_t b) {
+  if (a == 0 && b < 0) {
+    throw std::invalid_argument(
+        "no multiplicative inverse of additive identity");
+  }
+
+  if (b == 0) {
+    return 1;
+  }
+
+  uint32_t a_ = a;
+  uint32_t b_ = 0;
+  if (b < 0) {
+    a_ = ff_inv(a);
+  }
+  b_ = std::abs(b);
+
+  uint32_t res_s = a_;
+  uint32_t res_m = 1;
+
+  while (b_ > 1) {
+    if (b_ % 2 == 0) {
+      res_s = ff_mult(res_s, res_s);
+      b_ /= 2;
+    } else {
+      res_m = ff_mult(res_m, res_s);
+      b_ -= 1;
+    }
+  }
+
+  uint32_t res = ff_mult(res_m, res_s);
+  return res;
+}
