@@ -1,5 +1,4 @@
 #include "ff.hpp"
-#include <stdexcept>
 
 uint32_t ff_add(const uint32_t a, const uint32_t b) { return a ^ b; }
 
@@ -35,8 +34,11 @@ uint32_t ff_mult(const uint32_t a, const uint32_t b) {
 
 uint32_t ff_inv(const uint32_t a) {
   if (a == 0) {
-    throw std::invalid_argument(
-        "no multiplicative inverse of additive identity");
+    // ** no multiplicative inverse of additive identity **
+    //
+    // may be I should have thrown an error, which I can not
+    // do inside a function which will be invoked from kernel
+    return 0;
   }
 
   uint32_t exp = ORDER - 0b10;
@@ -59,8 +61,11 @@ uint32_t ff_inv(const uint32_t a) {
 
 uint32_t ff_div(const uint32_t a, const uint32_t b) {
   if (b == 0) {
-    throw std::invalid_argument(
-        "no multiplicative inverse of additive identity");
+    // ** no multiplicative inverse of additive identity **
+    //
+    // may be I should have thrown an error, which I can not
+    // do inside a function which will be invoked from kernel
+    return 0;
   }
 
   if (a == 0) {
@@ -74,8 +79,11 @@ uint32_t ff_div(const uint32_t a, const uint32_t b) {
 
 uint32_t ff_pow(const uint32_t a, const int32_t b) {
   if (a == 0 && b < 0) {
-    throw std::invalid_argument(
-        "no multiplicative inverse of additive identity");
+    // ** no multiplicative inverse of additive identity **
+    //
+    // may be I should have thrown an error, which I can not
+    // do inside a function which will be invoked from kernel
+    return 0;
   }
 
   if (b == 0) {
