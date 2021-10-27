@@ -1,32 +1,37 @@
 #include "hilbert.hpp"
 #include <chrono>
+#include <iomanip>
 
 using namespace sycl;
 
 const uint32_t N = 1 << 10;
 const uint32_t B = 1 << 5;
 
+typedef std::chrono::_V2::steady_clock::time_point tp;
+
 int main(int argc, char **argv) {
   device d{default_selector{}};
   queue q{d};
-  std::cout << "running on " << d.get_info<info::device::name>() << "\n"
+  std::cout << "running on " << d.get_info<info::device::name>() << std::endl;
+  std::cout << "hilbert matrix generation with F(2 ** 32) elements\n"
             << std::endl;
 
-  uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * N * N);
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * dim * dim);
 
-  std::chrono::_V2::steady_clock::time_point start =
-      std::chrono::steady_clock::now();
-  gen_hilbert_matrix(q, mat, N, B);
-  std::chrono::_V2::steady_clock::time_point end =
-      std::chrono::steady_clock::now();
+    tp start = std::chrono::steady_clock::now();
+    gen_hilbert_matrix(q, mat, dim, B);
+    tp end = std::chrono::steady_clock::now();
 
-  int64_t tm =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-          .count();
-  std::cout << N << "x" << N << " hilbert matrix with F(2 ** 32) elements, in "
-            << tm << " ms" << std::endl;
+    int64_t tm =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t\t" << std::setw(10) << std::right
+              << tm << " ms" << std::endl;
 
-  std::free(mat);
+    std::free(mat);
+  }
 
   return 0;
 }
