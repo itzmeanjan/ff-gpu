@@ -1,3 +1,4 @@
+#pragma once
 #include <CL/sycl.hpp>
 
 // computes a hilbert matrix of dimension (dim x dim)
