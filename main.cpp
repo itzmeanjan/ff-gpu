@@ -6,7 +6,7 @@ using namespace sycl;
 const uint32_t N = 4;
 const uint32_t B = 4;
 
-int main(int argc, char *argv) {
+int main(int argc, char **argv) {
   device d{default_selector{}};
   queue q{d};
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
