@@ -1,7 +1,10 @@
 #include "ff_p.hpp"
 #include <climits>
 
-uint64_t ff_p_add(const uint64_t a, const uint64_t b) {
+uint64_t ff_p_add(uint64_t a, uint64_t b) {
+  a %= MOD;
+  b %= MOD;
+
   uint64_t res_0 = a + b;
   bool over_0 = a > UINT64_MAX - b;
 
@@ -17,7 +20,10 @@ uint64_t ff_p_add(const uint64_t a, const uint64_t b) {
   return res;
 }
 
-uint64_t ff_p_sub(const uint64_t a, const uint64_t b) {
+uint64_t ff_p_sub(uint64_t a, uint64_t b) {
+  a %= MOD;
+  b %= MOD;
+
   uint64_t res_0 = a - b;
   bool under_0 = a < b;
 
