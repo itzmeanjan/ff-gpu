@@ -16,6 +16,9 @@ ff.o: ff.cpp include/ff.hpp
 hilbert.o: hilbert.cpp include/hilbert.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
+scalar_add.o: scalar_add.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
 utils.o: utils.cpp include/utils.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
