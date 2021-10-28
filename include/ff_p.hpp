@@ -7,3 +7,6 @@ inline constexpr uint64_t MOD =
 
 // modular addition of two prime field elements
 uint64_t ff_p_add(const uint64_t a, const uint64_t b);
+
+// modular subtraction of two prime field elements
+uint64_t ff_p_sub(const uint64_t a, const uint64_t b);
