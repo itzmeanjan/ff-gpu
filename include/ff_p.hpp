@@ -15,13 +15,13 @@ inline constexpr uint64_t MOD =
 //
 // note: if a, b ∉ F_p, it will be converted by performing
 // {a, b} % MOD
-uint64_t ff_p_add(uint64_t a, uint64_t b);
+extern SYCL_EXTERNAL uint64_t ff_p_add(uint64_t a, uint64_t b);
 
 // modular subtraction of two prime field elements
 //
 // note: if a, b ∉ F_p, it will be converted by performing
 // {a, b} % MOD
-uint64_t ff_p_sub(uint64_t a, uint64_t b);
+extern SYCL_EXTERNAL uint64_t ff_p_sub(uint64_t a, uint64_t b);
 
 // modular mulitiplication of two prime field elements
 //
