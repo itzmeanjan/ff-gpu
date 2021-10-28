@@ -1,4 +1,5 @@
 #include "hilbert.hpp"
+#include "scalar_add.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -29,6 +30,25 @@ int main(int argc, char **argv) {
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t\t" << std::setw(10) << std::right
               << tm << " ms" << std::endl;
+
+    std::free(mat);
+  }
+
+  std::cout << "add subsequence of F(2 ** 32) elements\n" << std::endl;
+
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * dim * dim);
+
+    tp start = std::chrono::steady_clock::now();
+    add_elements(q, mat, dim, B, N / dim);
+    tp end = std::chrono::steady_clock::now();
+
+    int64_t tm =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            .count();
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t\t" << std::setw(10) << std::right
+              << tm << " us" << std::endl;
 
     std::free(mat);
   }
