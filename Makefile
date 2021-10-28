@@ -10,16 +10,19 @@ PROG = run
 $(PROG): $(OBJECTS)
 	$(CXX) $(SYCLFLAGS) $^ -o $@
 
-ff.o: ff.cpp include/ff.hpp
+ff_p.o: ff_p.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-hilbert.o: hilbert.cpp include/hilbert.hpp
+ff.o: ff.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-utils.o: utils.cpp include/utils.hpp
+hilbert.o: hilbert.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-main.o: main.cpp include/hilbert.hpp include/utils.hpp
+utils.o: utils.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
+main.o: main.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
