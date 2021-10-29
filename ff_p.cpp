@@ -17,7 +17,7 @@ uint64_t ff_p_add(uint64_t a, uint64_t b) {
   uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(over_1 ? 1 : 0));
   uint64_t res = res_1 + tmp_1;
 
-  return res;
+  return res % MOD;
 }
 
 uint64_t ff_p_sub(uint64_t a, uint64_t b) {
@@ -36,7 +36,7 @@ uint64_t ff_p_sub(uint64_t a, uint64_t b) {
   uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(under_1 ? 1 : 0));
   uint64_t res = res_1 + tmp_1;
 
-  return res;
+  return res % MOD;
 }
 
 uint64_t ff_p_mul(uint64_t a, uint64_t b) {
@@ -65,7 +65,7 @@ uint64_t ff_p_mul(uint64_t a, uint64_t b) {
   uint64_t tmp_2 = (uint64_t)(zero - (uint32_t)(over_0 ? 1 : 0));
   uint64_t res = res_1 + tmp_2;
 
-  return res;
+  return res % MOD;
 }
 
 uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
