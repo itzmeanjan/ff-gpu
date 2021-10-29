@@ -51,3 +51,12 @@ extern SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
 // it raises operand to (p - 2)-th power, which is multiplicative
 // inverse of operand
 extern SYCL_EXTERNAL uint64_t ff_p_inv(uint64_t a);
+
+// modular division of one prime field element by another one
+//
+// note: both operands to be converted into field elements
+// by explicitly performing modulo at very beginning
+//
+// it computes a * (b ** -1), uses already defined multiplicative
+// inverse finder function
+extern SYCL_EXTERNAL uint64_t ff_p_div(uint64_t a, uint64_t b);

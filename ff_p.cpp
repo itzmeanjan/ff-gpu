@@ -104,3 +104,24 @@ uint64_t ff_p_inv(uint64_t a) {
   const uint64_t exp = MOD - 2;
   return ff_p_pow(a, exp);
 }
+
+uint64_t ff_p_div(uint64_t a, uint64_t b) {
+  a %= MOD;
+  b %= MOD;
+
+  if (b == 0) {
+    // ** no multiplicative inverse of additive identity **
+    //
+    // I'm not throwing an exception from here, because
+    // this function is supposed to be invoked from
+    // kernel body, where exception throwing is not (yet) allowed !
+    return 0;
+  }
+
+  if (a == 0) {
+    return 0;
+  }
+
+  uint64_t b_inv = ff_p_inv(b);
+  return ff_p_mul(a, b_inv);
+}
