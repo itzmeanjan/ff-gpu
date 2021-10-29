@@ -67,3 +67,24 @@ uint64_t ff_p_mul(uint64_t a, uint64_t b) {
 
   return res;
 }
+
+uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
+  a %= MOD;
+
+  if (b == 0) {
+    return 1;
+  }
+
+  if (a == 0) {
+    return 0;
+  }
+
+  uint64_t r = b & 0b1 ? a : 1;
+  for (uint8_t i = 1; i < 64 - sycl::clz(b); i++) {
+    a = ff_p_mul(a, a);
+    if ((b >> i) & 0b1) {
+      r = ff_p_mul(r, a);
+    }
+  }
+  return r;
+}

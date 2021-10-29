@@ -32,3 +32,9 @@ extern SYCL_EXTERNAL uint64_t ff_p_sub(uint64_t a, uint64_t b);
 // is reduced to field element such that c ∈ [0, p)
 // where p = field prime modulas
 extern SYCL_EXTERNAL uint64_t ff_p_mul(uint64_t a, uint64_t b);
+
+// modular exponentiation of prime field element by unsigned integer
+//
+// note: if first operand is not field element, it'll be converted into one
+// by performing modulo operation
+extern SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
