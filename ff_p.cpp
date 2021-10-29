@@ -43,7 +43,7 @@ uint64_t ff_p_mul(uint64_t a, uint64_t b) {
   a %= MOD;
   b %= MOD;
 
-  uint128_t c_u128 = sycl::ulong2(a * b, sycl::mul_hi(a, b));
+  uint128_t c_u128 = sycl::ulonglong2(a * b, sycl::mul_hi(a, b));
 
   uint64_t ab = c_u128.x();
   uint64_t cd = c_u128.y();

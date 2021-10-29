@@ -4,7 +4,7 @@
 // custom data type for dealing with two
 // 64-bit field element multiplication
 // resulting into 128-bit integer
-typedef sycl::cl_ulong2 uint128_t;
+typedef sycl::ulonglong2 uint128_t;
 
 // Prime modulas of selected field, F_p,
 // where p = 2 ** 64 - 2 ** 32 + 1
