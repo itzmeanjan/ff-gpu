@@ -38,3 +38,16 @@ extern SYCL_EXTERNAL uint64_t ff_p_mul(uint64_t a, uint64_t b);
 // note: if first operand is not field element, it'll be converted into one
 // by performing modulo operation
 extern SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
+
+// finds multiplicative inverse of field element, given that it's
+// not additive identity
+//
+// note: if operand is not part of prime field, it's made so by performing
+// modulo operation
+//
+// this function uses the fact a ** -1 = 1 / a = a ** (p - 2) ( mod p )
+// where p = prime field modulas
+//
+// it raises operand to (p - 2)-th power, which is multiplicative
+// inverse of operand
+extern SYCL_EXTERNAL uint64_t ff_p_inv(uint64_t a);
