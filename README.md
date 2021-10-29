@@ -87,4 +87,63 @@ hilbert matrix generation with F(2 ** 32) elements
 
 ---
 
+I take an empty vector of length N and keep parallelly adding field elements starting from (i + 1), i ∈ [0, N) upto i + 1 + ITR_COUNT, ITR_COUNT = 1 << 10, also N < 2 ** 32. Finally computed sequence is stored in designated position in vector.
+
+1. Running it on CPU
+
+```bash
+running on Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz
+add subsequence of F(2 ** 32) elements
+
+32   		    1024		     41099 us
+64   		    1024		       150 us
+128  		    1024		       130 us
+256  		    1024		       118 us
+512  		    1024		       137 us
+1024 		    1024		       162 us
+```
+
+2. On Intel Skylake CPU field addition
+
+```bash
+running on Intel Xeon Processor (Skylake, IBRS)
+add subsequence of F(2 ** 32) elements
+
+32   		    1024		     28358 us
+64   		    1024		        98 us
+128  		    1024		       168 us
+256  		    1024		       197 us
+512  		    1024		       148 us
+1024 		    1024		       368 us
+```
+
+3. On Intel Xe Max GPU
+
+```bash
+running on Intel(R) Iris(R) Xe MAX Graphics [0x4905]
+add subsequence of F(2 ** 32) elements
+
+32   		    1024		     76484 us
+64   		    1024		       363 us
+128  		    1024		       329 us
+256  		    1024		       346 us
+512  		    1024		       337 us
+1024 		    1024		       336 us
+```
+
+4. Finally on another CPU
+
+```bash
+running on Intel(R) Xeon(R) Gold 6128 CPU @ 3.40GHz
+add subsequence of F(2 ** 32) elements
+
+32   		    1024		     22485 us
+64   		    1024		       164 us
+128  		    1024		       197 us
+256  		    1024		       191 us
+512  		    1024		       122 us
+1024 		    1024		       163 us
+```
+
+---
 > More benchmarks to come !
