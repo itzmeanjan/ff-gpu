@@ -1,4 +1,5 @@
 #include "hilbert.hpp"
+#include "scalar_add.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -24,13 +25,32 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
             .count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t\t" << std::setw(10) << std::right
-              << tm << " ms" << std::endl;
+              << tm << " us" << std::endl;
 
     std::free(mat);
+  }
+
+  std::cout << "\nadd subsequence of F(2 ** 32) elements\n" << std::endl;
+
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    uint32_t *vec = (uint32_t *)malloc(sizeof(uint32_t) * dim);
+
+    tp start = std::chrono::steady_clock::now();
+    add_elements(q, vec, dim, B, N);
+    tp end = std::chrono::steady_clock::now();
+
+    int64_t tm =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            .count();
+    std::cout << std::setw(5) << std::left << dim << "\t\t" << std::setw(8)
+              << std::right << N << "\t\t" << std::setw(10) << std::right << tm
+              << " us" << std::endl;
+
+    std::free(vec);
   }
 
   return 0;
