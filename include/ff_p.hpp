@@ -13,36 +13,43 @@ inline constexpr uint64_t MOD =
 
 // modular addition of two prime field elements
 //
-// note: if a, b ∉ F_p, it will be converted by performing
-// {a, b} % MOD
+// note: operands doesn't necessarily need to ∈ F_p
+// but second operand will be made `b % MOD`
+//
+// return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
 extern SYCL_EXTERNAL uint64_t ff_p_add(uint64_t a, uint64_t b);
 
 // modular subtraction of two prime field elements
 //
-// note: if a, b ∉ F_p, it will be converted by performing
-// {a, b} % MOD
+// note: operands doesn't necessarily need to ∈ F_p
+// but second operand will be made `b % MOD`
+//
+// return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
 extern SYCL_EXTERNAL uint64_t ff_p_sub(uint64_t a, uint64_t b);
 
 // modular mulitiplication of two prime field elements
 //
-// note: if a, b ∉ F_p, it will be converted by performing
-// {a, b} % MOD
+// note: operands doesn't necessarily need to ∈ F_p
+// but second operand will be made `b % MOD`
 //
-// multiplication results into 128-bit integer, which
-// is reduced to field element such that c ∈ [0, p)
-// where p = field prime modulas
+// return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
 extern SYCL_EXTERNAL uint64_t ff_p_mult(uint64_t a, uint64_t b);
 
 // modular exponentiation of prime field element by unsigned integer
 //
-// note: if first operand is not field element, it'll be converted into one
-// by performing modulo operation
+// note: operands doesn't necessarily need to ∈ F_p
+//
+// return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
 extern SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
 
 // finds multiplicative inverse of field element, given that it's
 // not additive identity
 //
-// note: if operand is not part of prime field, it's made so by performing
+// note: if operand is not ∈ F_p, it's made so by performing
 // modulo operation
 //
 // this function uses the fact a ** -1 = 1 / a = a ** (p - 2) ( mod p )
@@ -50,13 +57,18 @@ extern SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
 //
 // it raises operand to (p - 2)-th power, which is multiplicative
 // inverse of operand
+//
+// return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
 extern SYCL_EXTERNAL uint64_t ff_p_inv(uint64_t a);
 
 // modular division of one prime field element by another one
 //
-// note: both operands to be converted into field elements
-// by explicitly performing modulo at very beginning
+// note: operands doesn't necessarily need to ∈ F_p
 //
 // it computes a * (b ** -1), uses already defined multiplicative
 // inverse finder function
+//
+// return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
 extern SYCL_EXTERNAL uint64_t ff_p_div(uint64_t a, uint64_t b);
