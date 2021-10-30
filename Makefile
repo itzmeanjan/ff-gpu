@@ -10,16 +10,16 @@ PROG = run
 $(PROG): $(OBJECTS)
 	$(CXX) $(SYCLFLAGS) $^ -o $@
 
-ff.o: ff.cpp include/ff.hpp
+ff.o: ff.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-hilbert.o: hilbert.cpp include/hilbert.hpp
+hilbert.o: hilbert.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 bench_ff.o: bench_ff.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-utils.o: utils.cpp include/utils.hpp
+utils.o: utils.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 main.o: main.cpp
