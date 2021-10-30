@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * dim * dim);
 
     tp start = std::chrono::steady_clock::now();
-    gen_hilbert_matrix(q, mat, dim, B);
+    gen_hilbert_matrix_ff(q, mat, dim, B);
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
@@ -165,6 +165,29 @@ int main(int argc, char **argv) {
               << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
   }
 
+  std::cout
+      << "\nhilbert matrix generation with F(2**64 - 2**32 + 1) elements 👇\n"
+      << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t\t" << std::setw(10) << "total" << std::endl;
+
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * dim * dim);
+
+    tp start = std::chrono::steady_clock::now();
+    gen_hilbert_matrix_ff_p(q, mat, dim, B);
+    tp end = std::chrono::steady_clock::now();
+
+    int64_t tm =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            .count();
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t\t" << std::setw(10) << std::right
+              << tm << " us" << std::endl;
+
+    std::free(mat);
+  }
+
   std::cout << "\naddition on F(2**64 - 2**32 + 1) elements 👇\n" << std::endl;
   std::cout << std::setw(11) << "dimension"
             << "\t\t" << std::setw(10) << "iterations"
@@ -186,7 +209,8 @@ int main(int argc, char **argv) {
               << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
   }
 
-  std::cout << "\nsubtraction on F(2**64 - 2**32 + 1) elements 👇\n" << std::endl;
+  std::cout << "\nsubtraction on F(2**64 - 2**32 + 1) elements 👇\n"
+            << std::endl;
   std::cout << std::setw(11) << "dimension"
             << "\t\t" << std::setw(10) << "iterations"
             << "\t\t" << std::setw(15) << "total"
