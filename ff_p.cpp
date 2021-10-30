@@ -39,7 +39,7 @@ uint64_t ff_p_sub(uint64_t a, uint64_t b) {
   return res % MOD;
 }
 
-uint64_t ff_p_mul(uint64_t a, uint64_t b) {
+uint64_t ff_p_mult(uint64_t a, uint64_t b) {
   a %= MOD;
   b %= MOD;
 
@@ -81,9 +81,9 @@ uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
 
   uint64_t r = b & 0b1 ? a : 1;
   for (uint8_t i = 1; i < 64 - sycl::clz(b); i++) {
-    a = ff_p_mul(a, a);
+    a = ff_p_mult(a, a);
     if ((b >> i) & 0b1) {
-      r = ff_p_mul(r, a);
+      r = ff_p_mult(r, a);
     }
   }
   return r;
@@ -123,5 +123,5 @@ uint64_t ff_p_div(uint64_t a, uint64_t b) {
   }
 
   uint64_t b_inv = ff_p_inv(b);
-  return ff_p_mul(a, b_inv);
+  return ff_p_mult(a, b_inv);
 }

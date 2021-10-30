@@ -31,7 +31,7 @@ extern SYCL_EXTERNAL uint64_t ff_p_sub(uint64_t a, uint64_t b);
 // multiplication results into 128-bit integer, which
 // is reduced to field element such that c ∈ [0, p)
 // where p = field prime modulas
-extern SYCL_EXTERNAL uint64_t ff_p_mul(uint64_t a, uint64_t b);
+extern SYCL_EXTERNAL uint64_t ff_p_mult(uint64_t a, uint64_t b);
 
 // modular exponentiation of prime field element by unsigned integer
 //
