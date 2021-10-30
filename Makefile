@@ -16,9 +16,6 @@ ff_p.o: ff_p.cpp
 ff.o: ff.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-hilbert.o: hilbert.cpp
-	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
-
 bench_ff_p.o: bench_ff_p.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
