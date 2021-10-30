@@ -16,13 +16,13 @@ ff.o: ff.cpp include/ff.hpp
 hilbert.o: hilbert.cpp include/hilbert.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-scalar_add.o: scalar_add.cpp
+bench_ff_add.o: bench_ff_add.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 utils.o: utils.cpp include/utils.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-main.o: main.cpp include/hilbert.hpp include/utils.hpp
+main.o: main.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:

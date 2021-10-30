@@ -1,5 +1,5 @@
+#include "bench_ff_add.hpp"
 #include "hilbert.hpp"
-#include "scalar_add.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -13,7 +13,8 @@ typedef std::chrono::_V2::steady_clock::time_point tp;
 int main(int argc, char **argv) {
   device d{default_selector{}};
   queue q{d};
-  std::cout << "running on " << d.get_info<info::device::name>() << std::endl;
+  std::cout << "running on " << d.get_info<info::device::name>() << "\n"
+            << std::endl;
   std::cout << "hilbert matrix generation with F(2 ** 32) elements\n"
             << std::endl;
 
@@ -34,23 +35,25 @@ int main(int argc, char **argv) {
     std::free(mat);
   }
 
-  std::cout << "\nadd subsequence of F(2 ** 32) elements\n" << std::endl;
+  std::cout << "\nbenchmark addition on F(2 ** 32) elements\n" << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t" << std::setw(10) << "iterations"
+            << "\t\t" << std::setw(15) << "total"
+            << "\t\t" << std::setw(20) << "avg" << std::endl;
 
   for (uint dim = B; dim <= N; dim <<= 1) {
-    uint32_t *vec = (uint32_t *)malloc(sizeof(uint32_t) * dim);
-
     tp start = std::chrono::steady_clock::now();
-    add_elements(q, vec, dim, B, N);
+    benchmark_ff_addition(q, dim, B, N);
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
             .count();
-    std::cout << std::setw(5) << std::left << dim << "\t\t" << std::setw(8)
-              << std::right << N << "\t\t" << std::setw(10) << std::right << tm
-              << " us" << std::endl;
-
-    std::free(vec);
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t" << std::setw(8) << std::right << N
+              << "\t\t" << std::setw(15) << std::right << tm << " ns"
+              << "\t\t" << std::setw(15) << std::right
+              << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
   }
 
   return 0;
