@@ -26,11 +26,11 @@ void benchmark_ff_p_subtraction(sycl::queue &q, const uint32_t dim,
     h.parallel_for(
         sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
         [=](sycl::nd_item<2> it) {
-          const uint32_t r = it.get_global_id(0);
-          const uint32_t c = it.get_global_id(1);
+          const uint64_t r = it.get_global_id(0);
+          const uint64_t c = it.get_global_id(1);
 
-          uint32_t elem = r + c + 1;
-          for (uint32_t i = 0; i < itr_count; i++) {
+          uint64_t elem = r + c + 1;
+          for (uint64_t i = 0; i < itr_count; i++) {
             ff_p_sub(elem, elem + i + 1);
           }
         });
