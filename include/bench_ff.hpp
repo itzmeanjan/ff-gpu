@@ -22,3 +22,9 @@ void benchmark_ff_division(sycl::queue &q, const uint32_t dim,
 // performance
 void benchmark_ff_inversion(sycl::queue &q, const uint32_t dim,
                             const uint32_t wg_size, const uint32_t itr_count);
+
+// Benchmark binary extension field exponentiation ( raising element to some
+// power )
+void benchmark_ff_exponentiation(sycl::queue &q, const uint32_t dim,
+                                 const uint32_t wg_size,
+                                 const uint32_t itr_count);

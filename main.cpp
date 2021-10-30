@@ -143,5 +143,26 @@ int main(int argc, char **argv) {
               << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
   }
 
+  std::cout << "\nexponentiation on F(2 ** 32) elements\n" << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t" << std::setw(10) << "iterations"
+            << "\t\t" << std::setw(15) << "total"
+            << "\t\t" << std::setw(20) << "avg" << std::endl;
+
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    tp start = std::chrono::steady_clock::now();
+    benchmark_ff_exponentiation(q, dim, B, N);
+    tp end = std::chrono::steady_clock::now();
+
+    int64_t tm =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
+            .count();
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t" << std::setw(8) << std::right << N
+              << "\t\t" << std::setw(15) << std::right << tm << " ns"
+              << "\t\t" << std::setw(15) << std::right
+              << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
+  }
+
   return 0;
 }
