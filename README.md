@@ -5,14 +5,42 @@ Finite Field Operations on GPGPU
 
 In recent times, I've been interested in Finite Field operations, so I decided to implement those in SYCL DPC++, targeting accelerators ( specifically GPGPUs ).
 
-In this repository, currently I keep addition(/ subtraction), multiplication, division, multiplicative inverse, exponentiation operation's implementations for `F(2 ** 32)`
+In this repository, currently I keep implementation of binary extension field `F(2 ** 32)`'s arithmetic operations, accompanied with relevant benchmarks on both CPU, GPGPU.
 
-> I plan to write better benchmarks, while improving current arithmetic operation's implementations.
+> I'm working on adding prime field `F(2**64 - 2**32 + 1)`'s implementation
 
-## Usage
+## Benchmarks
 
-- Make sure you've Intel oneAPI toolkit installed. I found [this](https://software.intel.com/content/www/us/en/develop/documentation/installation-guide-for-intel-oneapi-toolkits-linux/top/installation/install-using-package-managers/apt.html#apt) helpful.
-- Compile & run
+---
+
+### Prerequisites
+
+- Make sure you've `make`, `dpcpp`/ `clang++` installed
+- You can build DPC++ compiler from source, check [here](https://intel.github.io/llvm-docs/GetStartedGuide.html#prerequisites)
+- Or you may want to download pre-compiled Intel oneAPI toolkit, includes both compilers, check [here](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html) [**recommended**]
+
+### Run
+
+- I'm running
+
+```bash
+$ lsb_release -d
+
+Description:    Ubuntu 20.04.3 LTS
+```
+
+- As compiler, I'm using
+
+```bash
+$ dpcpp --version
+
+Intel(R) oneAPI DPC++/C++ Compiler 2021.3.0 (2021.3.0.20210619)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /opt/intel/oneapi/compiler/2021.3.0/linux/bin
+```
+
+- Compile, link & run
 
 ```bash
 make
@@ -25,66 +53,10 @@ make
 make clean
 ```
 
-## Benchmarks
-
-I've implemented Hilbert Matrix computation of dimension `N x N`, where each cell is computed using field operations, so each cell is indeed a field element ∈ F(2 ** 32).
-
-1. Running it on CPU
-
-```bash
-running on Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz
-hilbert matrix generation with F(2 ** 32) elements
-
-32   x   32			       139 ms
-64   x   64			         2 ms
-128  x  128			        10 ms
-256  x  256			        40 ms
-512  x  512			       163 ms
-1024 x 1024			       655 ms
-```
-
-2. Running it on Intel Skylake-series CPU
-
-```bash
-running on Intel Xeon Processor (Skylake, IBRS)
-hilbert matrix generation with F(2 ** 32) elements
-
-32   x   32			        77 ms
-64   x   64			         3 ms
-128  x  128			         3 ms
-256  x  256			         7 ms
-512  x  512			        18 ms
-1024 x 1024			        45 ms
-```
-
-3. On Intel Xe Max GPU, it's better
-
-```bash
-running on Intel(R) Iris(R) Xe MAX Graphics [0x4905]
-hilbert matrix generation with F(2 ** 32) elements
-
-32   x   32			        93 ms
-64   x   64			         0 ms
-128  x  128			         0 ms
-256  x  256			         1 ms
-512  x  512			         6 ms
-1024 x 1024			        23 ms
-```
-
-4. Finally on another CPU target
-
-```bash
-running on Intel(R) Xeon(R) Gold 6128 CPU @ 3.40GHz
-hilbert matrix generation with F(2 ** 32) elements
-
-32   x   32			        80 ms
-64   x   64			         0 ms
-128  x  128			         1 ms
-256  x  256			         3 ms
-512  x  512			        12 ms
-1024 x 1024			        27 ms
-```
-
 ---
 
-> More benchmarks to come !
+I run benchmarking code on both CPU and GPGPU.
+
+- [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
+
+> More to come !
