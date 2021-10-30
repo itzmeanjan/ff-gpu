@@ -2,7 +2,6 @@
 #include <climits>
 
 uint64_t ff_p_add(uint64_t a, uint64_t b) {
-  a %= MOD;
   b %= MOD;
 
   uint64_t res_0 = a + b;
@@ -17,11 +16,10 @@ uint64_t ff_p_add(uint64_t a, uint64_t b) {
   uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(over_1 ? 1 : 0));
   uint64_t res = res_1 + tmp_1;
 
-  return res % MOD;
+  return res;
 }
 
 uint64_t ff_p_sub(uint64_t a, uint64_t b) {
-  a %= MOD;
   b %= MOD;
 
   uint64_t res_0 = a - b;
@@ -36,11 +34,10 @@ uint64_t ff_p_sub(uint64_t a, uint64_t b) {
   uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(under_1 ? 1 : 0));
   uint64_t res = res_1 + tmp_1;
 
-  return res % MOD;
+  return res;
 }
 
 uint64_t ff_p_mult(uint64_t a, uint64_t b) {
-  a %= MOD;
   b %= MOD;
 
   uint128_t c_u128 = sycl::ulonglong2(a * b, sycl::mul_hi(a, b));
@@ -65,12 +62,10 @@ uint64_t ff_p_mult(uint64_t a, uint64_t b) {
   uint64_t tmp_2 = (uint64_t)(zero - (uint32_t)(over_0 ? 1 : 0));
   uint64_t res = res_1 + tmp_2;
 
-  return res % MOD;
+  return res;
 }
 
 uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
-  a %= MOD;
-
   if (b == 0) {
     return 1;
   }
@@ -106,9 +101,6 @@ uint64_t ff_p_inv(uint64_t a) {
 }
 
 uint64_t ff_p_div(uint64_t a, uint64_t b) {
-  a %= MOD;
-  b %= MOD;
-
   if (b == 0) {
     // ** no multiplicative inverse of additive identity **
     //
