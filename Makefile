@@ -33,3 +33,6 @@ main.o: main.cpp
 
 clean:
 	-rm $(PROG) $(wildcard *.o) $(wildcard include/*.gch)
+
+format:
+	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
