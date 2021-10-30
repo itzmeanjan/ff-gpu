@@ -16,7 +16,7 @@ ff.o: ff.cpp include/ff.hpp
 hilbert.o: hilbert.cpp include/hilbert.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-bench_ff_add.o: bench_ff_add.cpp
+bench_ff.o: bench_ff.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 utils.o: utils.cpp include/utils.hpp
