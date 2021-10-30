@@ -10,22 +10,22 @@ PROG = run
 $(PROG): $(OBJECTS)
 	$(CXX) $(SYCLFLAGS) $^ -o $@
 
-ff_p.o: ff_p.cpp
+ff_p.o: ff_p.cpp include/ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-ff.o: ff.cpp
+ff.o: ff.cpp include/ff.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-bench_ff_p.o: bench_ff_p.cpp
+bench_ff_p.o: bench_ff_p.cpp include/bench_ff_p.hpp include/ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-bench_ff.o: bench_ff.cpp
+bench_ff.o: bench_ff.cpp include/bench_ff.hpp include/ff.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-utils.o: utils.cpp
+utils.o: utils.cpp include/utils.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-main.o: main.cpp
+main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
