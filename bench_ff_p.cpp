@@ -31,11 +31,12 @@ void benchmark_ff_p_addition(sycl::queue &q, const uint32_t dim,
           const uint64_t r = it.get_global_id(0);
           const uint64_t c = it.get_global_id(1);
 
-          uint64_t one = 1;
-          uint64_t op = one << (r + c);
-          uint64_t elem = r + c + 1;
+          const uint64_t one = 1;
+          const uint64_t op1 = one << 31;
+          const uint64_t op2 = one << 59;
+          uint64_t tmp = 0;
           for (uint64_t i = 0; i < itr_count; i++) {
-            ff_p_add(elem, elem + i + op);
+            tmp = ff_p_add(op1 + i + r + tmp, op2 + i + c + tmp);
           }
         });
   });
@@ -52,11 +53,12 @@ void benchmark_ff_p_subtraction(sycl::queue &q, const uint32_t dim,
           const uint64_t r = it.get_global_id(0);
           const uint64_t c = it.get_global_id(1);
 
-          uint64_t one = 1;
-          uint64_t op = one << (r + c);
-          uint64_t elem = r + c + 1;
+          const uint64_t one = 1;
+          const uint64_t op1 = one << 31;
+          const uint64_t op2 = one << 59;
+          uint64_t tmp = 0;
           for (uint64_t i = 0; i < itr_count; i++) {
-            ff_p_sub(elem, elem + i + op);
+            tmp = ff_p_sub(op1 + i + r + tmp, op2 + i + c + tmp);
           }
         });
   });
@@ -73,11 +75,12 @@ void benchmark_ff_p_multiplication(sycl::queue &q, const uint32_t dim,
           const uint64_t r = it.get_global_id(0);
           const uint64_t c = it.get_global_id(1);
 
-          uint64_t one = 1;
-          uint64_t op = one << (r + c);
-          uint64_t elem = r + c + 1;
+          const uint64_t one = 1;
+          const uint64_t op1 = one << 31;
+          const uint64_t op2 = one << 59;
+          uint64_t tmp = 0;
           for (uint64_t i = 0; i < itr_count; i++) {
-            ff_p_mult(elem, elem + i + op);
+            tmp = ff_p_mult(op1 + i + r + tmp, op2 + i + c + tmp);
           }
         });
   });
@@ -93,11 +96,12 @@ void benchmark_ff_p_division(sycl::queue &q, const uint32_t dim,
           const uint64_t r = it.get_global_id(0);
           const uint64_t c = it.get_global_id(1);
 
-          uint64_t one = 1;
-          uint64_t op = one << (r + c);
-          uint64_t elem = r + c + 1;
+          const uint64_t one = 1;
+          const uint64_t op1 = one << 31;
+          const uint64_t op2 = one << 59;
+          uint64_t tmp = 0;
           for (uint64_t i = 0; i < itr_count; i++) {
-            ff_p_div(elem, elem + i + op);
+            tmp = ff_p_div(op1 + i + r + tmp, op2 + i + c + tmp);
           }
         });
   });
@@ -114,11 +118,11 @@ void benchmark_ff_p_inversion(sycl::queue &q, const uint32_t dim,
           const uint64_t r = it.get_global_id(0);
           const uint64_t c = it.get_global_id(1);
 
-          uint64_t one = 1;
-          uint64_t op = one << (r + c);
-          uint64_t elem = r + c + 1;
+          const uint64_t one = 1;
+          const uint64_t op = one << 31;
+          uint64_t tmp = 0;
           for (uint64_t i = 0; i < itr_count; i++) {
-            ff_p_inv(elem + i + op);
+            tmp = ff_p_inv(op + i + r * c + tmp);
           }
         });
   });
@@ -135,11 +139,12 @@ void benchmark_ff_p_exponentiation(sycl::queue &q, const uint32_t dim,
           const uint64_t r = it.get_global_id(0);
           const uint64_t c = it.get_global_id(1);
 
-          uint64_t one = 1;
-          uint64_t op = one << (r + c);
-          uint64_t elem = r + c + 1;
+          const uint64_t one = 1;
+          const uint64_t op1 = one << 31;
+          const uint64_t op2 = one << 59;
+          uint64_t tmp = 0;
           for (uint64_t i = 0; i < itr_count; i++) {
-            ff_p_pow(elem + i + op, i + 1);
+            tmp = ff_p_pow(op1 + i + r + tmp, op2 + i + c + tmp);
           }
         });
   });
