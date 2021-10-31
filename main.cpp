@@ -174,6 +174,8 @@ int main(int argc, char **argv) {
     std::cout << "- passed multiplication tests" << std::endl;
     test_power(q);
     std::cout << "- passed exponentiation tests" << std::endl;
+    test_inversion(q);
+    std::cout << "- passed inversion tests" << std::endl;
   }
 
   std::cout

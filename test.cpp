@@ -109,3 +109,14 @@ void test_power(sycl::queue &q) {
   assert(operate(q, r, 3, Op::power) ==
          operate(q, r, operate(q, r, r, Op::mult), Op::mult));
 }
+
+void test_inversion(sycl::queue &q) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  uint64_t r = next_random(gen);
+
+  assert(1 == operate(q, 1, 0, Op::inverse));
+  assert(0 == operate(q, 0, 0, Op::inverse));
+  assert(operate(q, r, MOD - 2, Op::power) == operate(q, r, 0, Op::inverse));
+}
