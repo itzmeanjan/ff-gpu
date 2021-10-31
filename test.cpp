@@ -166,4 +166,10 @@ void test_inversion(sycl::queue &q) {
   assert(1 == operate(q, 1, 0, Op::inverse));
   assert(0 == operate(q, 0, 0, Op::inverse));
   assert(operate(q, r, MOD - 2, Op::power) == operate(q, r, 0, Op::inverse));
+
+  uint64_t rounds = 1 << 10;
+  for (uint64_t i = 0; i < rounds; i++) {
+    r = next_random(gen);
+    assert(operate(q, r, operate(q, r, 0, Op::inverse), Op::mult) == 1);
+  }
 }
