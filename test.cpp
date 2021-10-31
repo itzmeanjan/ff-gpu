@@ -93,6 +93,7 @@ void test_multiplication(sycl::queue &q) {
   assert(MOD - 2 == operate(q, t, 2, Op::mult));
   assert(MOD - 4 == operate(q, t, 4, Op::mult));
   assert(1 == operate(q, v, 2, Op::mult));
+  assert(operate(q, r, 2, Op::mult) == operate(q, r, r, Op::add));
 }
 
 void test_power(sycl::queue &q) {
