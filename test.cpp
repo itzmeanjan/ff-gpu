@@ -63,3 +63,17 @@ void test_addition(sycl::queue &q) {
   assert(one == operate(q, t_1, two, Op::add));
   assert(t_2 == operate(q, t_1, 0xffffffff, Op::add));
 }
+
+void test_subtraction(sycl::queue &q) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  uint64_t zero = 0;
+  uint64_t two = 2;
+  uint64_t r = next_random(gen);
+  uint64_t t = MOD - two;
+
+  assert(r == operate(q, r, zero, Op::sub));
+  assert(two == operate(q, 5, 3, Op::sub));
+  assert(t == operate(q, 3, 5, Op::sub));
+}

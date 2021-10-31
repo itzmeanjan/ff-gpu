@@ -168,6 +168,8 @@ int main(int argc, char **argv) {
   {
     test_addition(q);
     std::cout << "\n- passed addition tests" << std::endl;
+    test_subtraction(q);
+    std::cout << "- passed subtraction tests" << std::endl;
   }
 
   std::cout

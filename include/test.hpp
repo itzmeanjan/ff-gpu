@@ -14,3 +14,5 @@ uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2, Op op);
 uint64_t next_random(std::mt19937 gen);
 
 void test_addition(sycl::queue &q);
+
+void test_subtraction(sycl::queue &q);
