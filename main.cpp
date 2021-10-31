@@ -1,13 +1,12 @@
 #include "bench_ff.hpp"
 #include "bench_ff_p.hpp"
-#include "test.hpp"
 #include <chrono>
 #include <iomanip>
 
 using namespace sycl;
 
 const uint32_t N = 1 << 10;
-const uint32_t B = 1 << 5;
+const uint32_t B = 1 << 7;
 
 typedef std::chrono::_V2::steady_clock::time_point tp;
 
@@ -163,19 +162,6 @@ int main(int argc, char **argv) {
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
               << "\t\t" << std::setw(15) << std::right
               << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
-  }
-
-  {
-    test_addition(q);
-    std::cout << "\n✅ passed addition tests" << std::endl;
-    test_subtraction(q);
-    std::cout << "✅ passed subtraction tests" << std::endl;
-    test_multiplication(q);
-    std::cout << "✅ passed multiplication tests" << std::endl;
-    test_power(q);
-    std::cout << "✅ passed exponentiation tests" << std::endl;
-    test_inversion(q);
-    std::cout << "✅ passed inversion tests" << std::endl;
   }
 
   std::cout
