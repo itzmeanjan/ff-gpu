@@ -78,6 +78,15 @@ void test_subtraction(sycl::queue &q) {
   assert(t == operate(q, 3, 5, Op::sub));
 }
 
+uint64_t multiply_with_addition(sycl::queue &q, const uint64_t a,
+                                const uint64_t b) {
+  uint64_t a_ = 0;
+  for (uint64_t i = 0; i < b; i++) {
+    a_ = operate(q, a, a_, Op::add);
+  }
+  return a_;
+}
+
 void test_multiplication(sycl::queue &q) {
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -94,6 +103,14 @@ void test_multiplication(sycl::queue &q) {
   assert(MOD - 4 == operate(q, t, 4, Op::mult));
   assert(1 == operate(q, v, 2, Op::mult));
   assert(operate(q, r, 2, Op::mult) == operate(q, r, r, Op::add));
+
+  // test whether multiplication & addition produces
+  // same results by performing n * a == (0 + n-times ... + a)
+  uint64_t rounds = 1 << 10;
+  for (uint64_t i = 0; i < rounds; i++) {
+    r = next_random(gen);
+    assert(multiply_with_addition(q, r, i) == operate(q, r, i, Op::mult));
+  }
 }
 
 void test_power(sycl::queue &q) {

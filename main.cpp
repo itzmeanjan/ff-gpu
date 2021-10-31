@@ -167,15 +167,15 @@ int main(int argc, char **argv) {
 
   {
     test_addition(q);
-    std::cout << "\n- passed addition tests" << std::endl;
+    std::cout << "\n✅ passed addition tests" << std::endl;
     test_subtraction(q);
-    std::cout << "- passed subtraction tests" << std::endl;
+    std::cout << "✅ passed subtraction tests" << std::endl;
     test_multiplication(q);
-    std::cout << "- passed multiplication tests" << std::endl;
+    std::cout << "✅ passed multiplication tests" << std::endl;
     test_power(q);
-    std::cout << "- passed exponentiation tests" << std::endl;
+    std::cout << "✅ passed exponentiation tests" << std::endl;
     test_inversion(q);
-    std::cout << "- passed inversion tests" << std::endl;
+    std::cout << "✅ passed inversion tests" << std::endl;
   }
 
   std::cout
