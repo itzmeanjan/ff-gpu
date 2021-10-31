@@ -77,3 +77,20 @@ void test_subtraction(sycl::queue &q) {
   assert(two == operate(q, 5, 3, Op::sub));
   assert(t == operate(q, 3, 5, Op::sub));
 }
+
+void test_multiplication(sycl::queue &q) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  uint64_t r = next_random(gen);
+  uint64_t t = MOD - 1;
+  uint64_t v = (MOD + 1) / 2;
+
+  assert(0 == operate(q, r, 0, Op::mult));
+  assert(r == operate(q, r, 1, Op::mult));
+  assert(15 == operate(q, 3, 5, Op::mult));
+  assert(1 == operate(q, t, t, Op::mult));
+  assert(MOD - 2 == operate(q, t, 2, Op::mult));
+  assert(MOD - 4 == operate(q, t, 4, Op::mult));
+  assert(1 == operate(q, v, 2, Op::mult));
+}

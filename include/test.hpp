@@ -16,3 +16,5 @@ uint64_t next_random(std::mt19937 gen);
 void test_addition(sycl::queue &q);
 
 void test_subtraction(sycl::queue &q);
+
+void test_multiplication(sycl::queue &q);

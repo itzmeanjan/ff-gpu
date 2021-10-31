@@ -170,6 +170,8 @@ int main(int argc, char **argv) {
     std::cout << "\n- passed addition tests" << std::endl;
     test_subtraction(q);
     std::cout << "- passed subtraction tests" << std::endl;
+    test_multiplication(q);
+    std::cout << "- passed multiplication tests" << std::endl;
   }
 
   std::cout
