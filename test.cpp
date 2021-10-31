@@ -1,12 +1,5 @@
-#include "ff_p.hpp"
-#include <random>
+#include "test.hpp"
 
-enum Op { add, sub, mult, pow, inv, div };
-
-// generic function to operate on field element operands,
-// specified using operator enumeration; computation offloaded to device
-//
-// returned result will ∈ F_p
 uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2,
                  Op op) {
   uint64_t res = 0;
@@ -30,13 +23,13 @@ uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2,
         case mult:
           acc[0] = ff_p_mult(operand_1, operand_2);
           break;
-        case pow:
+        case power:
           acc[0] = ff_p_pow(operand_1, operand_2);
           break;
-        case inv:
+        case inverse:
           acc[0] = ff_p_inv(operand_1);
           break;
-        case div:
+        case division:
           acc[0] = ff_p_div(operand_1, operand_2);
           break;
         }
@@ -48,9 +41,25 @@ uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2,
   return res % MOD;
 }
 
-// generate next random uint64 value using
-// provided engine & randomization source
 uint64_t next_random(std::mt19937 gen) {
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
   return dis(gen);
+}
+
+void test_addition(sycl::queue &q) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  uint64_t zero = 0;
+  uint64_t one = 1;
+  uint64_t two = 2;
+  uint64_t r = next_random(gen);
+  uint64_t t_1 = MOD - one;
+  uint64_t t_2 = 4294967294;
+
+  assert(r == operate(q, zero, r, Op::add));
+  assert(5 == operate(q, 3, two, Op::add));
+  assert(zero == operate(q, t_1, one, Op::add));
+  assert(one == operate(q, t_1, two, Op::add));
+  assert(t_2 == operate(q, t_1, 0xffffffff, Op::add));
 }
