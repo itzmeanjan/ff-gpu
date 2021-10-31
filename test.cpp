@@ -94,3 +94,18 @@ void test_multiplication(sycl::queue &q) {
   assert(MOD - 4 == operate(q, t, 4, Op::mult));
   assert(1 == operate(q, v, 2, Op::mult));
 }
+
+void test_power(sycl::queue &q) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  uint64_t r = next_random(gen);
+
+  assert(operate(q, 0, 0, Op::power) == 1);
+  assert(operate(q, 0, 1, Op::power) == 0);
+  assert(operate(q, 1, 0, Op::power) == 1);
+  assert(operate(q, 1, 1, Op::power) == 1);
+  assert(operate(q, 1, 2, Op::power) == 1);
+  assert(operate(q, r, 3, Op::power) ==
+         operate(q, r, operate(q, r, r, Op::mult), Op::mult));
+}

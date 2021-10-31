@@ -18,3 +18,5 @@ void test_addition(sycl::queue &q);
 void test_subtraction(sycl::queue &q);
 
 void test_multiplication(sycl::queue &q);
+
+void test_power(sycl::queue &q);
