@@ -76,6 +76,15 @@ void test_subtraction(sycl::queue &q) {
   assert(r == operate(q, r, zero, Op::sub));
   assert(two == operate(q, 5, 3, Op::sub));
   assert(t == operate(q, 3, 5, Op::sub));
+
+  uint64_t rounds = 1 << 13;
+  for (uint64_t i = 0; i < rounds; i++) {
+    uint64_t r0 = next_random(gen);
+    uint64_t r1 = next_random(gen);
+
+    assert(operate(q, r0, r1, Op::sub) ==
+           operate(q, r0, operate(q, 0, r1, Op::sub), Op::add));
+  }
 }
 
 uint64_t multiply_with_addition(sycl::queue &q, const uint64_t a,
@@ -113,6 +122,19 @@ void test_multiplication(sycl::queue &q) {
   }
 }
 
+uint64_t exponentiate_with_multiplication(sycl::queue &q, const uint64_t a,
+                                          const uint64_t b) {
+  if (b == 0) {
+    return 1;
+  }
+
+  uint64_t a_ = 1;
+  for (uint64_t i = 0; i < b; i++) {
+    a_ = operate(q, a, a_, Op::mult);
+  }
+  return a_;
+}
+
 void test_power(sycl::queue &q) {
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -126,6 +148,13 @@ void test_power(sycl::queue &q) {
   assert(operate(q, 1, 2, Op::power) == 1);
   assert(operate(q, r, 3, Op::power) ==
          operate(q, r, operate(q, r, r, Op::mult), Op::mult));
+
+  uint64_t rounds = 1 << 10;
+  for (uint64_t i = 0; i < rounds; i++) {
+    r = next_random(gen);
+    assert(exponentiate_with_multiplication(q, r, i) ==
+           operate(q, r, i, Op::power));
+  }
 }
 
 void test_inversion(sycl::queue &q) {
