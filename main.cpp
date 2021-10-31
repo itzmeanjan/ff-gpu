@@ -1,5 +1,6 @@
 #include "bench_ff.hpp"
 #include "bench_ff_p.hpp"
+#include "test.hpp"
 #include <chrono>
 #include <iomanip>
 
@@ -162,6 +163,11 @@ int main(int argc, char **argv) {
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
               << "\t\t" << std::setw(15) << std::right
               << (double)tm / (double)(dim * dim * N) << " ns" << std::endl;
+  }
+
+  {
+    test_addition(q);
+    std::cout << "\n- passed addition tests" << std::endl;
   }
 
   std::cout

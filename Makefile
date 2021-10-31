@@ -25,7 +25,10 @@ bench_ff.o: bench_ff.cpp include/bench_ff.hpp include/ff.hpp
 utils.o: utils.cpp include/utils.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp
+test.o: test.cpp include/test.hpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
+main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp include/test.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
