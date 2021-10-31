@@ -1,4 +1,5 @@
 #include "ff_p.hpp"
+#include <random>
 
 enum Op { add, sub, mult, pow, inv, div };
 
@@ -45,4 +46,11 @@ uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2,
   }
 
   return res % MOD;
+}
+
+// generate next random uint64 value using
+// provided engine & randomization source
+uint64_t next_random(std::mt19937 gen) {
+  std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
+  return dis(gen);
 }
