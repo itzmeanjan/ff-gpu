@@ -34,3 +34,4 @@
 .vscode
 run
 tests/test
+wrapper/lib*.so

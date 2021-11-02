@@ -46,3 +46,12 @@ tests/main.o: tests/main.cpp
 test: tests/ff_p.o tests/test.o tests/main.o
 	$(CXX) $(SYCLFLAGS) $^ -o tests/$@
 	@./tests/$@
+
+genlib: wrapper/ff_p.o wrapper/ff_p_wrapper.o
+	$(CXX) $(SYCLFLAGS) --shared -fPIC wrapper/*.o -o wrapper/libff_p.so
+
+wrapper/ff_p.o: ff_p.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)
+
+wrapper/ff_p_wrapper.o: wrapper/ff_p.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)
