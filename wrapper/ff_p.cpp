@@ -26,7 +26,7 @@ extern "C" uint64_t sub(uint64_t a, uint64_t b) {
   return *res;
 }
 
-extern "C" uint64_t mult(uint64_t a, uint64_t b) {
+extern "C" uint64_t multiply(uint64_t a, uint64_t b) {
   sycl::device d{sycl::default_selector{}};
   sycl::queue q{d};
 
@@ -39,7 +39,7 @@ extern "C" uint64_t mult(uint64_t a, uint64_t b) {
   return *res;
 }
 
-extern "C" uint64_t pow(uint64_t a, uint64_t b) {
+extern "C" uint64_t exponentiate(uint64_t a, uint64_t b) {
   sycl::device d{sycl::default_selector{}};
   sycl::queue q{d};
 
@@ -52,7 +52,7 @@ extern "C" uint64_t pow(uint64_t a, uint64_t b) {
   return *res;
 }
 
-extern "C" uint64_t inv(uint64_t a) {
+extern "C" uint64_t inverse(uint64_t a) {
   sycl::device d{sycl::default_selector{}};
   sycl::queue q{d};
 
@@ -65,7 +65,7 @@ extern "C" uint64_t inv(uint64_t a) {
   return *res;
 }
 
-extern "C" uint64_t div(uint64_t a, uint64_t b) {
+extern "C" uint64_t divide(uint64_t a, uint64_t b) {
   sycl::device d{sycl::default_selector{}};
   sycl::queue q{d};
 
