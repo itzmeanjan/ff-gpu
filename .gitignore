@@ -35,3 +35,4 @@
 run
 tests/test
 wrapper/lib*.so
+__pycache__
