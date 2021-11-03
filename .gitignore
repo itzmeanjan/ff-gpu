@@ -36,3 +36,7 @@ run
 tests/test
 wrapper/lib*.so
 __pycache__
+pyvenv.cfg
+bin/
+lib/
+lib64
