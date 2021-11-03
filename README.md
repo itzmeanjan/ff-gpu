@@ -40,7 +40,7 @@ InstalledDir: /opt/intel/oneapi/compiler/2021.3.0/linux/bin
 - Compile, link & run
 
 ```bash
-make # JIT kernel compilation
+make # JIT kernel compilation, for AOT read below
 ./run
 ```
 
@@ -80,9 +80,25 @@ make aot_gpu
 
 ---
 
-I run benchmarking code on both **CPU** and **GPGPU**.
+I run benchmarking code on both **CPU** and **GPGPU**, keeping results 👇
 
 - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
 - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
 
-> More to come !
+## Tests
+
+You can run basic test cases using
+
+```bash
+make test
+```
+
+There's another set of randomised test cases, which asserts results *( obtained from my prime field implementation )* with another finite field implementation module, written in `Python`, named `galois`.
+
+For running those, I suggest you first compile shared object using
+
+```bash
+make genlib
+```
+
+After that you can follow next steps [here](wrapper/python).
