@@ -8,7 +8,7 @@ void gen_hilbert_matrix_ff(sycl::queue &q, uint32_t *const mat, const uint dim,
   auto evt = q.submit([&](sycl::handler &h) {
     sycl::accessor<uint32_t, 2, sycl::access::mode::write,
                    sycl::access::target::global_buffer>
-        a_mat{b_mat, h, sycl::noinit};
+        a_mat{b_mat, h, sycl::no_init};
 
     h.parallel_for(
         sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
