@@ -29,7 +29,29 @@ main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
-	-rm $(PROG) $(wildcard *.o) $(wildcard include/*.gch)
+	-rm $(PROG) $(wildcard *.o) $(wildcard tests/*.o) $(wildcard wrapper/*.*o) $(wildcard include/*.gch)
 
 format:
 	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
+
+tests/ff_p.o: ff_p.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
+
+tests/test.o:	tests/test.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
+
+tests/main.o: tests/main.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
+
+test: tests/ff_p.o tests/test.o tests/main.o
+	$(CXX) $(SYCLFLAGS) $^ -o tests/$@
+	@./tests/$@
+
+genlib: wrapper/ff_p.o wrapper/ff_p_wrapper.o
+	$(CXX) $(SYCLFLAGS) --shared -fPIC wrapper/*.o -o wrapper/libff_p.so
+
+wrapper/ff_p.o: ff_p.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)
+
+wrapper/ff_p_wrapper.o: wrapper/ff_p.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)

@@ -6,7 +6,7 @@
 using namespace sycl;
 
 const uint32_t N = 1 << 10;
-const uint32_t B = 1 << 5;
+const uint32_t B = 1 << 7;
 
 typedef std::chrono::_V2::steady_clock::time_point tp;
 
