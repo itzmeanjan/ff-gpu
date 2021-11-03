@@ -29,7 +29,7 @@ main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
-	-rm $(PROG) $(wildcard *.o) $(wildcard tests/*.o) $(wildcard wrapper/*.*o) $(wildcard include/*.gch)
+	-rm $(PROG) a.out $(wildcard *.o) $(wildcard tests/*.o) $(wildcard wrapper/*.*o) $(wildcard include/*.gch)
 
 format:
 	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
