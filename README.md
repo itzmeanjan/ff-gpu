@@ -3,19 +3,18 @@ Finite Field Operations on GPGPU
 
 ## Background
 
-In recent times, I've been interested in Finite Field operations, so I decided to implement those in SYCL DPC++, targeting accelerators ( specifically GPGPUs ).
+In recent times, I've been interested in Finite Field operations, so I decided to implement few fields in SYCL DPC++, targeting accelerators ( specifically GPGPUs ).
 
-In this repository, currently I keep implementation of binary extension field `F(2 ** 32)`'s arithmetic operations, accompanied with relevant benchmarks on both CPU, GPGPU.
+In this repository, currently I keep implementation of two finite field's arithmetic operations, accompanied with relevant benchmarks on both CPU, GPGPU.
 
-> I'm working on adding prime field `F(2**64 - 2**32 + 1)`'s implementation
+- Binary Extension Field `F(2 ** 32)`
+- Prime Field `F(2 ** 64 - 2 ** 32 + 1)`
 
 ## Benchmarks
 
----
-
 ### Prerequisites
 
-- Make sure you've `make`, `dpcpp`/ `clang++` installed
+- Make sure you've `make`, `clang-format` and `dpcpp`/ `clang++` installed
 - You can build DPC++ compiler from source, check [here](https://intel.github.io/llvm-docs/GetStartedGuide.html#prerequisites)
 - Or you may want to download pre-compiled Intel oneAPI toolkit, includes both compilers, check [here](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html) [**recommended**]
 
@@ -53,10 +52,17 @@ make
 make clean
 ```
 
+- Format source, if required
+
+```bash
+make format
+```
+
 ---
 
-I run benchmarking code on both CPU and GPGPU.
+I run benchmarking code on both **CPU** and **GPGPU**.
 
 - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
+- [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
 
 > More to come !
