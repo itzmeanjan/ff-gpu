@@ -12,7 +12,7 @@ extern SYCL_EXTERNAL void apply_round(uint64_t *const state,
 
 extern SYCL_EXTERNAL void apply_sbox(uint64_t *const state);
 
-extern SYCL_EXTERNAL void apply_mds(uint64_t *const state);
+extern SYCL_EXTERNAL void apply_mds(uint64_t *state);
 
 extern SYCL_EXTERNAL void apply_constants(uint64_t *const state,
                                           const uint64_t *ark);
