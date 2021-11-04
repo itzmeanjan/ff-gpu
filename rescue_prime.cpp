@@ -1,5 +1,29 @@
 #include "rescue_prime.hpp"
 
+void hash_elements(const uint64_t *elements, const uint64_t count,
+                   uint64_t *const hash) {
+  uint64_t state[STATE_WIDTH] = {0};
+  state[STATE_WIDTH - 1] = count >= MOD ? count - MOD : count;
+
+  uint64_t i = 0;
+  for (uint64_t j = 0; j < count; j++) {
+    state[i] = ff_p_add(state[i], *(elements + j));
+    i++;
+    if (i % RATE_WIDTH == 0) {
+      apply_permutation(state);
+      i = 0;
+    }
+  }
+
+  if (i > 0) {
+    apply_permutation(state);
+  }
+
+  for (uint64_t i = 0; i < DIGEST_SIZE; i++) {
+    *(hash + i) = state[i];
+  }
+}
+
 void apply_permutation(uint64_t *const state) {
   for (uint64_t i = 0; i < NUM_ROUNDS; i++) {
     apply_round(state, i);

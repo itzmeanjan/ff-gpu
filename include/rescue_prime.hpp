@@ -5,6 +5,10 @@ inline constexpr uint64_t RATE_WIDTH = 8;
 inline constexpr uint64_t DIGEST_SIZE = 4;
 inline constexpr uint64_t NUM_ROUNDS = 7;
 
+extern SYCL_EXTERNAL void hash_elements(const uint64_t *elements,
+                                        const uint64_t count,
+                                        uint64_t *const hash);
+
 extern SYCL_EXTERNAL void apply_permutation(uint64_t *const state);
 
 extern SYCL_EXTERNAL void apply_round(uint64_t *const state,
