@@ -31,8 +31,9 @@ void apply_mds(uint64_t *state) {
     for (uint64_t j = 0; j < STATE_WIDTH; j++) {
       *(res + i) = ff_p_add(*(res + i), ff_p_mult(MDS[i][j], *(state + j)));
     }
+
+    *(state + i) = *(res + i);
   }
-  state = res;
 }
 
 void apply_constants(uint64_t *const state, const uint64_t *ark) {
