@@ -19,6 +19,9 @@ extern SYCL_EXTERNAL void apply_constants(uint64_t *const state,
 
 extern SYCL_EXTERNAL void apply_inv_sbox(uint64_t *const state);
 
+extern SYCL_EXTERNAL uint64_t *exp_acc(const uint64_t m, const uint64_t *base,
+                                       const uint64_t *tail);
+
 inline constexpr uint64_t MDS[STATE_WIDTH][STATE_WIDTH] = {
     {
         2108866337646019936 % MOD,

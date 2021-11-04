@@ -41,4 +41,33 @@ void apply_constants(uint64_t *const state, const uint64_t *ark) {
   }
 }
 
-void apply_inv_sbox(uint64_t *const state) {}
+void apply_inv_sbox(uint64_t *const state) {
+  uint64_t t1[STATE_WIDTH] = {0};
+  for (uint64_t i = 0; i < STATE_WIDTH; i++) {
+    t1[i] = ff_p_mult(*(state + i), *(state + i));
+  }
+
+  uint64_t t2[STATE_WIDTH] = {0};
+  for (uint64_t i = 0; i < STATE_WIDTH; i++) {
+    t2[i] = ff_p_mult(t1[i], t1[i]);
+  }
+}
+
+uint64_t *exp_acc(const uint64_t m, const uint64_t *base,
+                  const uint64_t *tail) {
+  uint64_t res[STATE_WIDTH] = {0};
+  for (uint64_t i = 0; i < m; i++) {
+    for (uint64_t j = 0; j < STATE_WIDTH; j++) {
+      if (i == 0) {
+        res[j] = ff_p_mult(*(base + j), *(base + j));
+      } else {
+        res[j] = ff_p_mult(res[j], res[j]);
+      }
+    }
+  }
+
+  for (uint64_t i = 0; i < STATE_WIDTH; i++) {
+    res[i] = ff_p_mult(res[i], *(tail + i));
+  }
+  return res;
+}
