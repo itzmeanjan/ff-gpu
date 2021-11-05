@@ -93,7 +93,8 @@ void apply_inv_sbox(uint64_t *const state) {
   exp_acc(31, t5, t5, t6);
 
   for (uint64_t i = 0; i < STATE_WIDTH; i++) {
-    uint64_t a = ff_p_mult(ff_p_mult(t6[i], t6[i]), ff_p_mult(t5[i], t5[i]));
+    uint64_t a = ff_p_mult(ff_p_mult(t6[i], t6[i]), t5[i]);
+    a = ff_p_mult(a, a);
     a = ff_p_mult(a, a);
     uint64_t b = ff_p_mult(ff_p_mult(t1[i], t2[i]), *(state + i));
 
