@@ -29,7 +29,7 @@ main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
-	-rm $(PROG) $(wildcard *.o) $(wildcard tests/*.o) $(wildcard wrapper/*.*o) $(wildcard include/*.gch)
+	-rm $(PROG) a.out $(wildcard *.o) $(wildcard tests/*.o) $(wildcard wrapper/*.*o) $(wildcard include/*.gch)
 
 format:
 	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
@@ -55,3 +55,13 @@ wrapper/ff_p.o: ff_p.cpp
 
 wrapper/ff_p_wrapper.o: wrapper/ff_p.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)
+
+aot_cpu:
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c main.cpp -o main.o $(INCLUDES)
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c utils.cpp -o utils.o $(INCLUDES)
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice -Xs "-march=avx2" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp utils.o main.o
+
+aot_gpu:
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c main.cpp -o main.o $(INCLUDES)
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c utils.cpp -o utils.o $(INCLUDES)
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs "-device 0x4905" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp utils.o main.o

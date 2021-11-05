@@ -1,11 +1,6 @@
 #pragma once
 #include <CL/sycl.hpp>
 
-// custom data type for dealing with two
-// 64-bit field element multiplication
-// resulting into 128-bit integer
-typedef sycl::ulonglong2 uint128_t;
-
 // Prime modulas of selected field, F_p,
 // where p = 2 ** 64 - 2 ** 32 + 1
 inline constexpr uint64_t MOD =
