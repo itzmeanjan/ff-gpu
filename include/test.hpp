@@ -1,3 +1,4 @@
+#pragma once
 #include "ff_p.hpp"
 #include <random>
 
