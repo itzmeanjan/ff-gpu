@@ -11,6 +11,7 @@ int main(int argc, char **argv) {
             << std::endl;
 
   test_alphas(q);
+  test_sbox(q);
 
   // test_addition(q);
   // std::cout << "✅ passed addition tests" << std::endl;
