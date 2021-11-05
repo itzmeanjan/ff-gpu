@@ -10,4 +10,6 @@ void test_alphas(sycl::queue &q);
 
 void test_sbox(sycl::queue &q);
 
-void random_array(std::mt19937 gen, uint64_t *const arr, const uint64_t count);
+void random_array(uint64_t *const arr, const uint64_t count);
+
+void test_inv_sbox(sycl::queue &q);
