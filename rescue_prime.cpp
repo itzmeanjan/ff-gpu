@@ -53,10 +53,12 @@ void apply_mds(uint64_t *state) {
   uint64_t res[STATE_WIDTH] = {0};
   for (uint64_t i = 0; i < STATE_WIDTH; i++) {
     for (uint64_t j = 0; j < STATE_WIDTH; j++) {
-      *(res + i) = ff_p_add(*(res + i), ff_p_mult(MDS[i][j], *(state + j)));
+      res[i] = ff_p_add(res[i], ff_p_mult(MDS[i][j], *(state + j)));
     }
+  }
 
-    *(state + i) = *(res + i);
+  for (uint64_t i = 0; i < STATE_WIDTH; i++) {
+    *(state + i) = res[i];
   }
 }
 
