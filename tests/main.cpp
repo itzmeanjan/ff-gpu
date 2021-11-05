@@ -13,6 +13,7 @@ int main(int argc, char **argv) {
   test_alphas(q);
   test_sbox(q);
   test_inv_sbox(q);
+  test_permutation(q);
 
   // test_addition(q);
   // std::cout << "✅ passed addition tests" << std::endl;
