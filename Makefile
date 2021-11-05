@@ -37,13 +37,19 @@ format:
 tests/ff_p.o: ff_p.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
 
+tests/rescue_prime.o: rescue_prime.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
+
+tests/test_rescue_prime.o: tests/test_rescue_prime.cpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
+
 tests/test.o:	tests/test.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
 
 tests/main.o: tests/main.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ -o $@ $(INCLUDES)
 
-test: tests/ff_p.o tests/test.o tests/main.o
+test: tests/ff_p.o tests/rescue_prime.o tests/test_rescue_prime.o tests/test.o tests/main.o
 	$(CXX) $(SYCLFLAGS) $^ -o tests/$@
 	@./tests/$@
 
