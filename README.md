@@ -84,6 +84,7 @@ I run benchmarking code on both **CPU** and **GPGPU**, keeping results 👇
 
 - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
 - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
+- [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/rescue_prime.md)
 
 ## Tests
 
