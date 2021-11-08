@@ -10,10 +10,16 @@ PROG = run
 $(PROG): $(OBJECTS)
 	$(CXX) $(SYCLFLAGS) $^ -o $@
 
+rescue_prime.o: rescue_prime.cpp include/rescue_prime.hpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
 ff_p.o: ff_p.cpp include/ff_p.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 ff.o: ff.cpp include/ff.hpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
+bench_rescue_prime.o: bench_rescue_prime.cpp include/bench_rescue_prime.hpp include/rescue_prime.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 bench_ff_p.o: bench_ff_p.cpp include/bench_ff_p.hpp include/ff_p.hpp
@@ -25,7 +31,7 @@ bench_ff.o: bench_ff.cpp include/bench_ff.hpp include/ff.hpp
 utils.o: utils.cpp include/utils.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp
+main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp include/bench_rescue_prime.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
