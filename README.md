@@ -10,6 +10,8 @@ In this repository, currently I keep implementation of two finite field's arithm
 - Binary Extension Field `F(2 ** 32)`
 - Prime Field `F(2 ** 64 - 2 ** 32 + 1)`
 
+I've also written Rescue Prime Hash function implementation, along with benchmark results on CPU, GPU.
+
 ## Prerequisites
 
 - Make sure you've `make`, `clang-format` and `dpcpp`/ `clang++` installed
