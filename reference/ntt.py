@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-from functools import reduce
 import galois as gl
 import math
+import numpy as np
 
 MODULUS = 2 ** 64 - 2 ** 32 + 1
 gf = gl.GF(MODULUS)
@@ -24,41 +24,46 @@ def get_root_of_unity(n: int):
 
 
 def forward_transform(vec):
-    n = len(vec)
+    n = vec.shape[0]
     assert n & (n-1) == 0, "domain must be of power of two size"
 
     _omega = get_root_of_unity(int(math.log2(n)))
 
-    return [reduce(lambda acc, cur: acc + cur, [vec[j] * (_omega ** (i * j)) for j in range(n)], gf(0)) for i in range(n)]
+    index = np.arange(n)
+    horz, vert = np.meshgrid(index, index)
+    _omega_mat = _omega ** (horz * vert)
+
+    return np.matmul(_omega_mat, vec)
 
 
 def inverse_transform(vec):
-    n = len(vec)
+    n = vec.shape[0]
     assert n & (n-1) == 0, "domain must be of power of two size"
 
     _omega = get_root_of_unity(int(math.log2(n)))
     _omega_inv = gf(1) / _omega
+
+    index = np.arange(n)
+    horz, vert = np.meshgrid(index, index)
+    _omega_mat = _omega_inv ** (horz * vert)
+
     n_inv = gf(1) / gf(n)
-
-    return [n_inv * reduce(lambda acc, cur: acc + cur, [vec[j] * (_omega_inv ** (i * j)) for j in range(n)], gf(0)) for i in range(n)]
-
-
-def random_elements(n: int):
-    return [gf.Random() for i in range(n)]
+    return n_inv * np.matmul(_omega_mat, vec)
 
 
 def main():
-    for i in range(3, 8):
+    for i in range(3, 9):
         n = 1 << i
 
-        v = random_elements(n)
+        v = gf.Random(n)
         v_fwd = forward_transform(v)
         v_inv = inverse_transform(v_fwd)
 
         for i in range(n):
             assert v[i] == v_inv[i], f"expected {v[i]}, found {v_inv[i]}"
 
-        print(f'passed forward/ inverse transform for {n:>4}-sized random domain')
+        print(
+            f'passed forward/ inverse transform for {n:>4}-sized random domain')
 
 
 if __name__ == '__main__':
