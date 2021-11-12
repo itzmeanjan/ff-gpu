@@ -1,4 +1,5 @@
 #include "test.hpp"
+#include "test_ntt.hpp"
 #include "test_rescue_prime.hpp"
 
 using namespace sycl;
@@ -25,6 +26,8 @@ int main(int argc, char **argv) {
   test_inv_sbox(q);
   test_permutation(q);
   std::cout << "✅ passed rescue prime tests" << std::endl;
+  check_ntt_correctness(q, 1 << 10, 1 << 6);
+  std::cout << "✅ passed NTT correctness test" << std::endl;
 
   return 0;
 }

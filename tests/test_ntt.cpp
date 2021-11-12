@@ -66,7 +66,7 @@ void check_ntt_correctness(sycl::queue &q, const uint64_t dim,
       buf_2d_u64_rd_t acc_mat_c{buf_mat_c, h};
       buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
 
-      h.parallel_for<class kernelCheckNTTCorrection>(
+      h.parallel_for<class kernelCheckNTTCorrectness>(
           sycl::nd_range<2>{sycl::range<2>{dim, dim},
                             sycl::range<2>{1, wg_size}},
           [=](sycl::nd_item<2> it) {
