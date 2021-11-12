@@ -27,16 +27,16 @@ sycl::event compute_matrix_matrix_multiplication(
   return evt;
 }
 
-void check_correctness(sycl::queue &q, const uint64_t dim,
-                       const uint64_t wg_size) {
-  assert(dim & (dim - 1ul) == 0);
+void check_ntt_correctness(sycl::queue &q, const uint64_t dim,
+                           const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
   uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
   assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
 
-  uint64_t omega = 0;
-  uint64_t omega_inv = 0ul;
-  buf_1d_u64_t buf_omega{&omega, sycl::range<1>{1}};
-  buf_1d_u64_t buf_omega_inv{&omega_inv, sycl::range<1>{1}};
+  uint64_t *omega = (uint64_t *)malloc(sizeof(uint64_t));
+  uint64_t *omega_inv = (uint64_t *)malloc(sizeof(uint64_t));
+  buf_1d_u64_t buf_omega{omega, sycl::range<1>{1}};
+  buf_1d_u64_t buf_omega_inv{omega_inv, sycl::range<1>{1}};
 
   compute_omega(q, buf_omega, log_2_dim);
   compute_omega_inv(q, buf_omega_inv, log_2_dim);
@@ -55,7 +55,36 @@ void check_correctness(sycl::queue &q, const uint64_t dim,
       static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
   buf_2d_u64_t buf_mat_c{mat_c, sycl::range<2>{dim, dim}};
 
-  sycl::event evt = compute_matrix_matrix_multiplication(
-      q, buf_mat_a, buf_mat_b, buf_mat_c, dim, wg_size);
-  evt.wait();
+  compute_matrix_matrix_multiplication(q, buf_mat_a, buf_mat_b, buf_mat_c, dim,
+                                       wg_size);
+
+  uint64_t mismatch = 0;
+  {
+    sycl::buffer<uint64_t, 1> buf_mismatch{&mismatch, sycl::range<1>{1}};
+
+    q.submit([&](sycl::handler &h) {
+      buf_2d_u64_rd_t acc_mat_c{buf_mat_c, h};
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.parallel_for<class kernelCheckNTTCorrection>(
+          sycl::nd_range<2>{sycl::range<2>{dim, dim},
+                            sycl::range<2>{1, wg_size}},
+          [=](sycl::nd_item<2> it) {
+            const size_t r = it.get_global_id(0);
+            const size_t c = it.get_global_id(1);
+
+            uint64_t v = acc_mat_c[r][c] % MOD;
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add((r == c ? v == dim : v == 0) ? 0 : 1);
+          });
+    });
+    q.wait();
+  }
+
+  assert(mismatch == 0);
 }
