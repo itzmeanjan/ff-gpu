@@ -95,7 +95,7 @@ void prepare_random_vector(uint64_t *const vec, const uint64_t size) {
   std::uniform_int_distribution<uint64_t> dis(1ul, MOD);
 
   for (uint64_t i = 0; i < size; i++) {
-    *(vec + i) = i + 1;
+    *(vec + i) = dis(gen);
   }
 }
 
