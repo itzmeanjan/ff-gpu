@@ -25,8 +25,9 @@ sycl::event compute_omega_inv(sycl::queue &q, buf_1d_u64_t &omega_inv,
   return evt;
 }
 
-void compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &omega,
-                        const uint64_t dim, const uint64_t wg_size) {
+sycl::event compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat,
+                               buf_1d_u64_t &omega, const uint64_t dim,
+                               const uint64_t wg_size) {
   q.submit([&](sycl::handler &h) {
     buf_2d_u64_wr_t acc_mat{mat, h, sycl::no_init};
     buf_1d_u64_rd_t acc_omega{omega, h};
@@ -51,7 +52,7 @@ void compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &omega,
         });
   });
 
-  q.submit([&](sycl::handler &h) {
+  sycl::event evt = q.submit([&](sycl::handler &h) {
     buf_2d_u64_rw_t acc_mat{mat, h};
 
     h.parallel_for<class kernelComputeDFTMatrix>(
@@ -67,13 +68,14 @@ void compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &omega,
           acc_mat[r][c] = c == 0 ? 1ul : ff_p_pow(acc_mat[1][c], r);
         });
   });
+
+  return evt;
 }
 
-void compute_matrix_vector_multiplication(sycl::queue &q, buf_2d_u64_t &mat,
-                                          buf_1d_u64_t &vec, buf_1d_u64_t &res,
-                                          const uint64_t dim,
-                                          const uint64_t wg_size) {
-  q.submit([&](sycl::handler &h) {
+sycl::event compute_matrix_vector_multiplication(
+    sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &vec, buf_1d_u64_t &res,
+    const uint64_t dim, const uint64_t wg_size) {
+  sycl::event evt = q.submit([&](sycl::handler &h) {
     buf_2d_u64_rd_t acc_mat{mat, h};
     buf_1d_u64_rd_t acc_vec{vec, h};
     buf_1d_u64_rw_t acc_res{res, h, sycl::no_init};
@@ -93,10 +95,12 @@ void compute_matrix_vector_multiplication(sycl::queue &q, buf_2d_u64_t &mat,
           acc_res[r] = sum;
         });
   });
+  return evt;
 }
 
-void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
-                       const uint64_t dim, const uint64_t wg_size) {
+sycl::event forward_transform(sycl::queue &q, buf_1d_u64_t &vec,
+                              buf_1d_u64_t &res, const uint64_t dim,
+                              const uint64_t wg_size) {
   // size of input vector must be power of two !
   assert(dim & (dim - 1ul) == 0);
   uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
@@ -113,35 +117,8 @@ void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   buf_2d_u64_t buf_mat{mat, sycl::range<2>{dim, dim}};
 
   compute_dft_matrix(q, buf_mat, buf_omega, dim, wg_size);
-  compute_matrix_vector_multiplication(q, buf_mat, vec, res, dim, wg_size);
+  sycl::event evt =
+      compute_matrix_vector_multiplication(q, buf_mat, vec, res, dim, wg_size);
 
-  q.wait();
-}
-
-void compute_matrix_matrix_multiplication(sycl::queue &q, buf_2d_u64_t &mat_a,
-                                          buf_2d_u64_t &mat_b,
-                                          buf_2d_u64_t &mat_c,
-                                          const uint64_t dim,
-                                          const uint64_t wg_size) {
-  q.submit([&](sycl::handler &h) {
-    buf_2d_u64_rd_t acc_mat_a{mat_a, h};
-    buf_2d_u64_rd_t acc_mat_b{mat_b, h};
-    buf_2d_u64_rw_t acc_mat_c{mat_c, h, sycl::no_init};
-
-    h.parallel_for<class kernelComputeDFTMatrixMatrixMultipication>(
-        sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
-        [=](sycl::nd_item<2> it) {
-          sycl::sub_group sg = it.get_sub_group();
-          const uint64_t r = it.get_global_id(0);
-          const uint64_t c = it.get_global_id(1);
-
-          uint64_t sum = 0ul;
-          for (uint64_t i = 0; i < dim; i++) {
-            sum = ff_p_add(sum,
-                           ff_p_mult(sycl::group_broadcast(sg, acc_mat_a[r][i]),
-                                     acc_mat_b[i][c]));
-          }
-          acc_mat_c[r][c] = sum;
-        });
-  });
+  return evt;
 }
