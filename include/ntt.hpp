@@ -38,3 +38,9 @@ void compute_matrix_vector_multiplication(sycl::queue &q, buf_2d_u64_t &mat,
 
 void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                        const uint64_t dim, const uint64_t wg_size);
+
+void compute_matrix_matrix_multiplication(sycl::queue &q, buf_2d_u64_t &mat_a,
+                                          buf_2d_u64_t &mat_b,
+                                          buf_2d_u64_t &mat_c,
+                                          const uint64_t dim,
+                                          const uint64_t wg_size);

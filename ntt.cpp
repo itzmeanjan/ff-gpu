@@ -108,3 +108,31 @@ void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   compute_matrix_vector_multiplication(q, buf_mat, vec, res, dim, wg_size);
   q.wait();
 }
+
+void compute_matrix_matrix_multiplication(sycl::queue &q, buf_2d_u64_t &mat_a,
+                                          buf_2d_u64_t &mat_b,
+                                          buf_2d_u64_t &mat_c,
+                                          const uint64_t dim,
+                                          const uint64_t wg_size) {
+  q.submit([&](sycl::handler &h) {
+    buf_2d_u64_rd_t acc_mat_a{mat_a, h};
+    buf_2d_u64_rd_t acc_mat_b{mat_b, h};
+    buf_2d_u64_rw_t acc_mat_c{mat_c, h, sycl::no_init};
+
+    h.parallel_for<class kernelComputeDFTMatrixMatrixMultipication>(
+        sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          sycl::sub_group sg = it.get_sub_group();
+          const uint64_t r = it.get_global_id(0);
+          const uint64_t c = it.get_global_id(1);
+
+          uint64_t sum = 0ul;
+          for (uint64_t i = 0; i < dim; i++) {
+            sum = ff_p_add(sum,
+                           ff_p_mult(sycl::group_broadcast(sg, acc_mat_a[r][i]),
+                                     acc_mat_b[i][c]));
+          }
+          acc_mat_c[r][c] = sum;
+        });
+  });
+}
