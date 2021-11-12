@@ -98,6 +98,26 @@ sycl::event compute_matrix_vector_multiplication(
   return evt;
 }
 
+sycl::event compute_matrix_scalar_multilication(sycl::queue &q,
+                                                buf_2d_u64_t &mat,
+                                                const uint64_t factor,
+                                                const uint64_t dim,
+                                                const uint64_t wg_size) {
+  sycl::event evt = q.submit([&](sycl::handler &h) {
+    buf_2d_u64_rw_t acc_mat{mat, h};
+
+    h.parallel_for<class kernelInvDFTMatrixVsScalarMultiplication>(
+        sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          const size_t r = it.get_global_id(0);
+          const size_t c = it.get_global_id(1);
+
+          acc_mat[r][c] = ff_p_mult(acc_mat[r][c], factor);
+        });
+  });
+  return evt;
+}
+
 sycl::event forward_transform(sycl::queue &q, buf_1d_u64_t &vec,
                               buf_1d_u64_t &res, const uint64_t dim,
                               const uint64_t wg_size) {
@@ -119,6 +139,44 @@ sycl::event forward_transform(sycl::queue &q, buf_1d_u64_t &vec,
   compute_dft_matrix(q, buf_mat, buf_omega, dim, wg_size);
   sycl::event evt =
       compute_matrix_vector_multiplication(q, buf_mat, vec, res, dim, wg_size);
+
+  return evt;
+}
+
+sycl::event inverse_transform(sycl::queue &q, buf_1d_u64_t &vec,
+                              buf_1d_u64_t &res, const uint64_t dim,
+                              const uint64_t wg_size) {
+  // size of input vector must be power of two !
+  assert((dim & (dim - 1ul)) == 0);
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  // order can't exceed 2 ** 32 and can't also
+  // find root of unity for n = 0
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t omega_inv = 0ul;
+  buf_1d_u64_t buf_omega_inv{&omega_inv, sycl::range<1>{1}};
+
+  compute_omega_inv(q, buf_omega_inv, log_2_dim);
+
+  uint64_t *mat = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
+  buf_2d_u64_t buf_mat{mat, sycl::range<2>{dim, dim}};
+
+  compute_dft_matrix(q, buf_mat, buf_omega_inv, dim, wg_size);
+  compute_matrix_vector_multiplication(q, buf_mat, vec, res, dim, wg_size);
+
+  uint64_t inv_dim = 0ul;
+  {
+    buf_1d_u64_t buf_inv_dim{&inv_dim, sycl::range<1>{1}};
+
+    q.submit([&](sycl::handler &h) {
+       buf_1d_u64_wr_t acc_inv_dim{buf_inv_dim, h};
+
+       h.single_task([=]() { acc_inv_dim[0] = ff_p_inv(dim); });
+     }).wait();
+  }
+
+  sycl::event evt =
+      compute_matrix_scalar_multilication(q, buf_mat, inv_dim, dim, wg_size);
 
   return evt;
 }
