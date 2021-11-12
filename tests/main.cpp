@@ -1,4 +1,5 @@
 #include "test.hpp"
+#include "test_rescue_prime.hpp"
 
 using namespace sycl;
 
@@ -19,6 +20,11 @@ int main(int argc, char **argv) {
   std::cout << "✅ passed exponentiation tests" << std::endl;
   test_inversion(q);
   std::cout << "✅ passed inversion tests" << std::endl;
+  test_alphas(q);
+  test_sbox(q);
+  test_inv_sbox(q);
+  test_permutation(q);
+  std::cout << "✅ passed rescue prime tests" << std::endl;
 
   return 0;
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 
 // prints of square matrix of given dimension on console
