@@ -14,6 +14,32 @@ uint64_t get_root_of_unity(uint64_t n) {
   return ff_p_pow(TWO_ADIC_ROOT_OF_UNITY, power);
 }
 
+sycl::event compute_omega(sycl::queue &q, buf_1d_u64_t &omega,
+                          const uint64_t domain_size) {
+  sycl::event evt = q.submit([&](sycl::handler &h) {
+    buf_1d_u64_wr_t acc_omega{omega, h, sycl::no_init};
+
+    q.single_task([=]() {
+      uint64_t log_2_domain_size = (uint64_t)sycl::log2((float)domain_size);
+      acc_omega[0] = get_root_of_unity(log_2_domain_size);
+    });
+  });
+  return evt;
+}
+
+sycl::event compute_omega_inv(sycl::queue &q, buf_1d_u64_t &omega_inv,
+                              const uint64_t domain_size) {
+  sycl::event evt = q.submit([&](sycl::handler &h) {
+    buf_1d_u64_wr_t acc_omega_inv{omega_inv, h, sycl::no_init};
+
+    q.single_task([=]() {
+      uint64_t log_2_domain_size = (uint64_t)sycl::log2((float)domain_size);
+      acc_omega_inv[0] = ff_p_inv(get_root_of_unity(log_2_domain_size));
+    });
+  });
+  return evt;
+}
+
 void compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &omega,
                         const uint64_t dim, const uint64_t wg_size) {
   q.submit([&](sycl::handler &h) {
@@ -95,17 +121,14 @@ void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   uint64_t omega = 0ul;
   buf_1d_u64_t buf_omega{&omega, sycl::range<1>{1}};
 
-  q.submit([&](sycl::handler &h) {
-    buf_1d_u64_wr_t acc_omega{buf_omega, h, sycl::no_init};
-
-    q.single_task([=]() { acc_omega[0] = get_root_of_unity(log_2_dim); });
-  });
+  compute_omega(q, buf_omega, dim);
 
   uint64_t *mat = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
   buf_2d_u64_t buf_mat{mat, sycl::range<2>{dim, dim}};
 
   compute_dft_matrix(q, buf_mat, buf_omega, dim, wg_size);
   compute_matrix_vector_multiplication(q, buf_mat, vec, res, dim, wg_size);
+
   q.wait();
 }
 

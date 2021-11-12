@@ -44,3 +44,9 @@ void compute_matrix_matrix_multiplication(sycl::queue &q, buf_2d_u64_t &mat_a,
                                           buf_2d_u64_t &mat_c,
                                           const uint64_t dim,
                                           const uint64_t wg_size);
+
+sycl::event compute_omega(sycl::queue &q, buf_1d_u64_t &omega,
+                          const uint64_t domain_size);
+
+sycl::event compute_omega_inv(sycl::queue &q, buf_1d_u64_t &omega_inv,
+                              const uint64_t domain_size);
