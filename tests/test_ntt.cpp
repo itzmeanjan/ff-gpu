@@ -60,7 +60,7 @@ void check_ntt_correctness(sycl::queue &q, const uint64_t dim,
 
   uint64_t mismatch = 0;
   {
-    sycl::buffer<uint64_t, 1> buf_mismatch{&mismatch, sycl::range<1>{1}};
+    buf_1d_u64_t buf_mismatch{&mismatch, sycl::range<1>{1}};
 
     q.submit([&](sycl::handler &h) {
       buf_2d_u64_rd_t acc_mat_c{buf_mat_c, h};
@@ -81,6 +81,64 @@ void check_ntt_correctness(sycl::queue &q, const uint64_t dim,
                 sycl::access::address_space::global_device_space>
                 corr_ref{acc_mismatch[0]};
             corr_ref.fetch_add((r == c ? v == dim : v == 0) ? 0 : 1);
+          });
+    });
+    q.wait();
+  }
+
+  assert(mismatch == 0);
+}
+
+void prepare_random_vector(uint64_t *const vec, const uint64_t size) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<uint64_t> dis(1ul, MOD);
+
+  for (uint64_t i = 0; i < size; i++) {
+    *(vec + i) = i + 1;
+  }
+}
+
+void check_ntt_forward_inverse_transform(sycl::queue &q, const uint64_t dim,
+                                         const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_src = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+  prepare_random_vector(vec_src, dim);
+
+  uint64_t *vec_fwd = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+  uint64_t *vec_inv = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+
+  buf_1d_u64_t buf_vec_src{vec_src, sycl::range<1>{dim}};
+  buf_1d_u64_t buf_vec_fwd{vec_fwd, sycl::range<1>{dim}};
+  buf_1d_u64_t buf_vec_inv{vec_inv, sycl::range<1>{dim}};
+
+  forward_transform(q, buf_vec_src, buf_vec_fwd, dim, wg_size);
+  inverse_transform(q, buf_vec_fwd, buf_vec_inv, dim, wg_size);
+
+  uint64_t mismatch = 0;
+  {
+    buf_1d_u64_t buf_mismatch{&mismatch, sycl::range<1>{1}};
+
+    q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rd_t acc_vec_src{buf_vec_src, h};
+      buf_1d_u64_rd_t acc_vec_inv{buf_vec_inv, h};
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.parallel_for<class kernelCheckNTTForwardInverseTransform>(
+          sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+          [=](sycl::nd_item<1> it) {
+            const size_t r = it.get_global_id(0);
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add(
+                acc_vec_src[r] % MOD == acc_vec_inv[r] % MOD ? 0 : 1);
           });
     });
     q.wait();
