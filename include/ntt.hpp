@@ -10,6 +10,9 @@ typedef sycl::accessor<uint64_t, 2, sycl::access::mode::write,
 typedef sycl::accessor<uint64_t, 1, sycl::access::mode::read,
                        sycl::access::target::global_buffer>
     buf_1d_u64_rd_t;
+typedef sycl::accessor<uint64_t, 2, sycl::access::mode::read_write,
+                       sycl::access::target::global_buffer>
+    buf_2d_u64_rw_t;
 
 inline constexpr uint64_t TWO_ADICITY = 32ul;
 inline constexpr uint64_t TWO_ADIC_ROOT_OF_UNITY = 1753635133440165772ul;

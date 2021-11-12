@@ -35,7 +35,25 @@ void compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &omega,
 
           it.barrier(sycl::access::fence_space::local_space);
 
+          acc_mat[0][c] = 1ul;
           acc_mat[1][c] = ff_p_pow(loc_acc_omega[0], c);
+        });
+  });
+
+  q.submit([&](sycl::handler &h) {
+    buf_2d_u64_rw_t acc_mat{mat, h};
+
+    h.parallel_for<class kernelComputeDFTMatrix>(
+        sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          const uint64_t r = it.get_global_id(0);
+          const uint64_t c = it.get_global_id(1);
+
+          if (r < 2) {
+            return;
+          }
+
+          acc_mat[r][c] = c == 0 ? 1ul : ff_p_pow(acc_mat[1][c], r);
         });
   });
 }
