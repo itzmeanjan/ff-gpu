@@ -98,21 +98,20 @@ sycl::event compute_matrix_vector_multiplication(
   return evt;
 }
 
-sycl::event compute_matrix_scalar_multilication(sycl::queue &q,
-                                                buf_2d_u64_t &mat,
+sycl::event compute_vector_scalar_multilication(sycl::queue &q,
+                                                buf_1d_u64_t &vec,
                                                 const uint64_t factor,
                                                 const uint64_t dim,
                                                 const uint64_t wg_size) {
   sycl::event evt = q.submit([&](sycl::handler &h) {
-    buf_2d_u64_rw_t acc_mat{mat, h};
+    buf_1d_u64_rw_t acc_vec{vec, h};
 
-    h.parallel_for<class kernelInvDFTMatrixVsScalarMultiplication>(
-        sycl::nd_range<2>{sycl::range<2>{dim, dim}, sycl::range<2>{1, wg_size}},
-        [=](sycl::nd_item<2> it) {
+    h.parallel_for<class kernelInvDFTScalarMultiplication>(
+        sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+        [=](sycl::nd_item<1> it) {
           const size_t r = it.get_global_id(0);
-          const size_t c = it.get_global_id(1);
 
-          acc_mat[r][c] = ff_p_mult(acc_mat[r][c], factor);
+          acc_vec[r] = ff_p_mult(acc_vec[r], factor);
         });
   });
   return evt;
@@ -176,7 +175,7 @@ sycl::event inverse_transform(sycl::queue &q, buf_1d_u64_t &vec,
   }
 
   sycl::event evt =
-      compute_matrix_scalar_multilication(q, buf_mat, inv_dim, dim, wg_size);
+      compute_vector_scalar_multilication(q, res, inv_dim, dim, wg_size);
 
   return evt;
 }

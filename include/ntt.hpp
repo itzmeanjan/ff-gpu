@@ -36,8 +36,8 @@ sycl::event compute_matrix_vector_multiplication(
     sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &vec, buf_1d_u64_t &res,
     const uint64_t dim, const uint64_t wg_size);
 
-sycl::event compute_matrix_scalar_multilication(sycl::queue &q,
-                                                buf_2d_u64_t &mat,
+sycl::event compute_vector_scalar_multilication(sycl::queue &q,
+                                                buf_1d_u64_t &vec,
                                                 const uint64_t factor,
                                                 const uint64_t dim,
                                                 const uint64_t wg_size);
