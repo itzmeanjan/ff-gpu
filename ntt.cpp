@@ -57,3 +57,29 @@ void compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat, buf_1d_u64_t &omega,
         });
   });
 }
+
+void compute_matrix_vector_multiplication(sycl::queue &q, buf_2d_u64_t &mat,
+                                          buf_1d_u64_t &vec, buf_1d_u64_t &res,
+                                          const uint64_t dim,
+                                          const uint64_t wg_size) {
+  q.submit([&](sycl::handler &h) {
+    buf_2d_u64_rd_t acc_mat{mat, h};
+    buf_1d_u64_rd_t acc_vec{vec, h};
+    buf_1d_u64_rw_t acc_res{res, h, sycl::no_init};
+
+    h.parallel_for<class kernelComputeDFTMatrixVectorMultipication>(
+        sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+        [=](sycl::nd_item<1> it) {
+          sycl::sub_group sg = it.get_sub_group();
+          const uint64_t r = it.get_global_id(0);
+
+          uint64_t sum = 0ul;
+          for (uint64_t c = 0; c < dim; c++) {
+            sum =
+                ff_p_add(sum, ff_p_mult(acc_mat[r][c],
+                                        sycl::group_broadcast(sg, acc_vec[c])));
+          }
+          acc_res[r] = sum;
+        });
+  });
+}
