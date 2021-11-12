@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+'''
+    Read https://www.nayuki.io/page/number-theoretic-transform-integer-dft for
+    more information
+'''
+
 import galois as gl
 import math
 import numpy as np
@@ -15,6 +20,8 @@ TWO_ADIC_ROOT_OF_UNITY = gf(1753635133440165772)  # 7 ** ((mod - 1) // 2 ** 32)
 def get_root_of_unity(n: int):
     '''
       Returns root of unity of order 2 ** n
+
+      Inspired from https://github.com/novifinancial/winterfell/blob/1685fa591aae9a5b426a590b7cf46c27607297de/math/src/field/traits.rs#L218-L227
     '''
     assert n != 0, "can't find root of unity for n = 0"
     assert n <= TWO_ADICITY, f"order can't exceed 2 ** {TWO_ADICITY}"
@@ -51,6 +58,27 @@ def inverse_transform(vec):
     return n_inv * np.matmul(_omega_mat, vec)
 
 
+def check_correctness(n: int):
+    '''
+        Check `Proof of DFT/NTT correctness` section of
+        https://www.nayuki.io/page/number-theoretic-transform-integer-dft
+    '''
+    assert n & (n-1) == 0, "domain must be of power of two size"
+
+    _omega = get_root_of_unity(int(math.log2(n)))
+    _omega_inv = gf(1) / _omega
+
+    index = np.arange(n)
+    horz, vert = np.meshgrid(index, index)
+    powers = horz * vert
+    _omega_mat = _omega ** powers
+    _omega_inv_mat = _omega_inv ** powers
+
+    assert np.all(gf.Identity(n) * gf(n) == np.matmul(_omega_mat,
+                                                      _omega_inv_mat)), "AB = nI check failed, where A = forward DFT matrix, B = inverse DFT matrix"
+    print(f"passed correctness check of AB = nI, with n = {n}")
+
+
 def main():
     for i in range(3, 9):
         n = 1 << i
@@ -68,3 +96,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    check_correctness(1 << 8)
