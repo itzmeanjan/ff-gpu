@@ -10,7 +10,7 @@ sycl::event compute_omega(sycl::queue &q, buf_1d_u64_t &omega,
   sycl::event evt = q.submit([&](sycl::handler &h) {
     buf_1d_u64_wr_t acc_omega{omega, h, sycl::no_init};
 
-    q.single_task([=]() { acc_omega[0] = get_root_of_unity(n); });
+    h.single_task([=]() { acc_omega[0] = get_root_of_unity(n); });
   });
   return evt;
 }
@@ -20,7 +20,7 @@ sycl::event compute_omega_inv(sycl::queue &q, buf_1d_u64_t &omega_inv,
   sycl::event evt = q.submit([&](sycl::handler &h) {
     buf_1d_u64_wr_t acc_omega_inv{omega_inv, h, sycl::no_init};
 
-    q.single_task([=]() { acc_omega_inv[0] = ff_p_inv(get_root_of_unity(n)); });
+    h.single_task([=]() { acc_omega_inv[0] = ff_p_inv(get_root_of_unity(n)); });
   });
   return evt;
 }
@@ -65,7 +65,7 @@ sycl::event compute_dft_matrix(sycl::queue &q, buf_2d_u64_t &mat,
             return;
           }
 
-          acc_mat[r][c] = c == 0 ? 1ul : ff_p_pow(acc_mat[1][c], r);
+          acc_mat[r][c] = ff_p_pow(acc_mat[1][c], r);
         });
   });
 
@@ -102,7 +102,7 @@ sycl::event forward_transform(sycl::queue &q, buf_1d_u64_t &vec,
                               buf_1d_u64_t &res, const uint64_t dim,
                               const uint64_t wg_size) {
   // size of input vector must be power of two !
-  assert(dim & (dim - 1ul) == 0);
+  assert((dim & (dim - 1ul)) == 0);
   uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
   // order can't exceed 2 ** 32 and can't also
   // find root of unity for n = 0
