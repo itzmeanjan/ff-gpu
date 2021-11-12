@@ -1,41 +1,26 @@
 #include "ntt.hpp"
 
 uint64_t get_root_of_unity(uint64_t n) {
-  if (n == 0) {
-    // can't find root of unity for n = 0
-    return 0;
-  }
-  if (n > TWO_ADICITY) {
-    // order can't exceed 2 ** 32
-    return 0;
-  }
-
   uint64_t power = 1ul << (TWO_ADICITY - n);
   return ff_p_pow(TWO_ADIC_ROOT_OF_UNITY, power);
 }
 
 sycl::event compute_omega(sycl::queue &q, buf_1d_u64_t &omega,
-                          const uint64_t domain_size) {
+                          const uint64_t n) {
   sycl::event evt = q.submit([&](sycl::handler &h) {
     buf_1d_u64_wr_t acc_omega{omega, h, sycl::no_init};
 
-    q.single_task([=]() {
-      uint64_t log_2_domain_size = (uint64_t)sycl::log2((float)domain_size);
-      acc_omega[0] = get_root_of_unity(log_2_domain_size);
-    });
+    q.single_task([=]() { acc_omega[0] = get_root_of_unity(n); });
   });
   return evt;
 }
 
 sycl::event compute_omega_inv(sycl::queue &q, buf_1d_u64_t &omega_inv,
-                              const uint64_t domain_size) {
+                              const uint64_t n) {
   sycl::event evt = q.submit([&](sycl::handler &h) {
     buf_1d_u64_wr_t acc_omega_inv{omega_inv, h, sycl::no_init};
 
-    q.single_task([=]() {
-      uint64_t log_2_domain_size = (uint64_t)sycl::log2((float)domain_size);
-      acc_omega_inv[0] = ff_p_inv(get_root_of_unity(log_2_domain_size));
-    });
+    q.single_task([=]() { acc_omega_inv[0] = ff_p_inv(get_root_of_unity(n)); });
   });
   return evt;
 }
@@ -115,13 +100,14 @@ void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   // size of input vector must be power of two !
   assert(dim & (dim - 1ul) == 0);
   uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
-  // order can't exceed 2 ** 32
-  assert(log_2_dim <= TWO_ADICITY);
+  // order can't exceed 2 ** 32 and can't also
+  // find root of unity for n = 0
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
 
   uint64_t omega = 0ul;
   buf_1d_u64_t buf_omega{&omega, sycl::range<1>{1}};
 
-  compute_omega(q, buf_omega, dim);
+  compute_omega(q, buf_omega, log_2_dim);
 
   uint64_t *mat = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
   buf_2d_u64_t buf_mat{mat, sycl::range<2>{dim, dim}};
