@@ -1,15 +1,13 @@
 #include "bench_ff.hpp"
 #include "bench_ff_p.hpp"
+#include "bench_ntt.hpp"
 #include "bench_rescue_prime.hpp"
-#include <chrono>
 #include <iomanip>
 
 using namespace sycl;
 
 const uint32_t N = 1 << 10;
 const uint32_t B = 1 << 7;
-
-typedef std::chrono::_V2::steady_clock::time_point tp;
 
 int main(int argc, char **argv) {
   device d{default_selector{}};
@@ -340,6 +338,30 @@ int main(int argc, char **argv) {
               << (double)tm / (double)(dim * dim * 1) << " us"
               << "\t\t" << std::setw(15) << std::right
               << 1e6 / ((double)tm / (double)(dim * dim * 1)) << std::endl;
+  }
+
+  std::cout << "\nForward NTT on F(2**64 - 2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(5) << "dimension"
+            << "\t\t" << std::setw(10) << "total" << std::endl;
+
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    int64_t tm = benchmark_forward_transform(q, dim, B);
+
+    std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
+              << std::right << tm << " ms" << std::endl;
+  }
+
+  std::cout << "\nInverse NTT on F(2**64 - 2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(5) << "dimension"
+            << "\t\t" << std::setw(10) << "total" << std::endl;
+
+  for (uint dim = B; dim <= N; dim <<= 1) {
+    int64_t tm = benchmark_inverse_transform(q, dim, B);
+
+    std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
+              << std::right << tm << " ms" << std::endl;
   }
 
   return 0;

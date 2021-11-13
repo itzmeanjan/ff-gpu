@@ -1,14 +1,17 @@
 CXX = dpcpp
 CXXFLAGS = -std=c++17 -Wall
 SYCLFLAGS = -fsycl
-SOURCES = $(wildcard *.cpp)
-HEADERS = $(wildcard include/*.hpp)
-OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 INCLUDES = -I./include
 PROG = run
 
-$(PROG): $(OBJECTS)
+$(PROG): main.o utils.o bench_ff.o bench_ff_p.o bench_rescue_prime.o bench_ntt.o ff.o ff_p.o rescue_prime.o ntt.o test_ntt.o
 	$(CXX) $(SYCLFLAGS) $^ -o $@
+
+test_ntt.o: tests/test_ntt.cpp include/test_ntt.hpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
+ntt.o: ntt.cpp include/ntt.hpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 rescue_prime.o: rescue_prime.cpp include/rescue_prime.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
@@ -19,19 +22,22 @@ ff_p.o: ff_p.cpp include/ff_p.hpp
 ff.o: ff.cpp include/ff.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-bench_rescue_prime.o: bench_rescue_prime.cpp include/bench_rescue_prime.hpp include/rescue_prime.hpp
+bench_ntt.o: bench_ntt.cpp include/bench_ntt.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-bench_ff_p.o: bench_ff_p.cpp include/bench_ff_p.hpp include/ff_p.hpp
+bench_rescue_prime.o: bench_rescue_prime.cpp include/bench_rescue_prime.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-bench_ff.o: bench_ff.cpp include/bench_ff.hpp include/ff.hpp
+bench_ff_p.o: bench_ff_p.cpp include/bench_ff_p.hpp
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
+
+bench_ff.o: bench_ff.cpp include/bench_ff.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 utils.o: utils.cpp include/utils.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
-main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp include/bench_rescue_prime.hpp
+main.o: main.cpp include/bench_ff.hpp include/bench_ff_p.hpp include/bench_rescue_prime.hpp include/bench_ntt.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) -c $^ $(INCLUDES)
 
 clean:
