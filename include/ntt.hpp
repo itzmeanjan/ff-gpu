@@ -42,13 +42,11 @@ sycl::event compute_vector_scalar_multilication(sycl::queue &q,
                                                 const uint64_t dim,
                                                 const uint64_t wg_size);
 
-sycl::event forward_transform(sycl::queue &q, buf_1d_u64_t &vec,
-                              buf_1d_u64_t &res, const uint64_t dim,
-                              const uint64_t wg_size);
+void forward_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
+                       const uint64_t dim, const uint64_t wg_size);
 
-sycl::event inverse_transform(sycl::queue &q, buf_1d_u64_t &vec,
-                              buf_1d_u64_t &res, const uint64_t dim,
-                              const uint64_t wg_size);
+void inverse_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
+                       const uint64_t dim, const uint64_t wg_size);
 
 sycl::event compute_omega(sycl::queue &q, buf_1d_u64_t &omega,
                           const uint64_t domain_size);
