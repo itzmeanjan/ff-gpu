@@ -53,3 +53,5 @@ sycl::event compute_omega(sycl::queue &q, buf_1d_u64_t &omega,
 
 sycl::event compute_omega_inv(sycl::queue &q, buf_1d_u64_t &omega_inv,
                               const uint64_t domain_size);
+
+extern SYCL_EXTERNAL uint64_t bit_rev(uint64_t v, uint64_t max_bit_width);

@@ -186,3 +186,11 @@ void inverse_transform(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   std::free(omega_inv);
   std::free(mat);
 }
+
+uint64_t bit_rev(uint64_t v, uint64_t max_bit_width) {
+  uint64_t v_rev = 0ul;
+  for (uint64_t i = 0; i < max_bit_width; i++) {
+    v_rev += ((v >> i) & 0b1) * (1ul << (max_bit_width - 1ul - i));
+  }
+  return v_rev;
+}
