@@ -208,6 +208,9 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
     buf_1d_u64_t buf_omega{omega, sycl::range<1>{1}};
     buf_1d_u64_t buf_staging{staging, sycl::range<1>{dim}};
 
+    buf_omega.set_write_back(false);
+    buf_staging.set_write_back(false);
+
     compute_omega(q, buf_omega, log_2_dim);
 
     q.submit([&](sycl::handler &h) {
@@ -217,18 +220,10 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
       h.copy(acc_vec, acc_staging);
     });
 
-    q.submit([&](sycl::handler &h) {
-      buf_1d_u64_rd_t acc_vec{vec, h};
-      buf_1d_u64_wr_t acc_res{res, h, sycl::no_init};
-
-      h.copy(acc_vec, acc_res);
-    });
-
     for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
       q.submit([&](sycl::handler &h) {
         buf_1d_u64_rd_t acc_omega{buf_omega, h};
-        buf_1d_u64_rd_t acc_res{res, h};
-        buf_1d_u64_wr_t acc_staging{buf_staging, h};
+        buf_1d_u64_rw_t acc_staging{buf_staging, h};
         sycl::accessor<uint64_t, 1, sycl::access_mode::read_write,
                        sycl::target::local>
             acc_lds{sycl::range<1>{1}, h};
@@ -251,20 +246,13 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
               if (k % p == k % (2 * p)) {
                 uint64_t k_rev = bit_rev(k, log_2_dim) % q;
                 uint64_t z_pow = ff_p_pow(acc_lds[0], k_rev);
-                uint64_t tmp_k = acc_res[k];
-                uint64_t tmp_k_p = acc_res[k + p];
+                uint64_t tmp_k = acc_staging[k];
+                uint64_t tmp_k_p = acc_staging[k + p];
 
                 acc_staging[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
                 acc_staging[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
               }
             });
-      });
-
-      q.submit([&](sycl::handler &h) {
-        buf_1d_u64_wr_t acc_res{res, h};
-        buf_1d_u64_rd_t acc_staging{buf_staging, h};
-
-        h.copy(acc_staging, acc_res);
       });
     }
 
@@ -302,6 +290,10 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
     buf_1d_u64_t buf_dim_inv{dim_inv, sycl::range<1>{1}};
     buf_1d_u64_t buf_staging{staging, sycl::range<1>{dim}};
 
+    buf_omega_inv.set_write_back(false);
+    buf_dim_inv.set_write_back(false);
+    buf_staging.set_write_back(false);
+
     compute_omega_inv(q, buf_omega_inv, log_2_dim);
 
     q.submit([&](sycl::handler &h) {
@@ -311,18 +303,10 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
       h.copy(acc_vec, acc_staging);
     });
 
-    q.submit([&](sycl::handler &h) {
-      buf_1d_u64_rd_t acc_vec{vec, h};
-      buf_1d_u64_wr_t acc_res{res, h, sycl::no_init};
-
-      h.copy(acc_vec, acc_res);
-    });
-
     for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
       q.submit([&](sycl::handler &h) {
         buf_1d_u64_rd_t acc_omega_inv{buf_omega_inv, h};
-        buf_1d_u64_rd_t acc_res{res, h};
-        buf_1d_u64_wr_t acc_staging{buf_staging, h};
+        buf_1d_u64_rw_t acc_staging{buf_staging, h};
         sycl::accessor<uint64_t, 1, sycl::access_mode::read_write,
                        sycl::target::local>
             acc_lds{sycl::range<1>{1}, h};
@@ -345,20 +329,13 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
               if (k % p == k % (2 * p)) {
                 uint64_t k_rev = bit_rev(k, log_2_dim) % q;
                 uint64_t z_pow = ff_p_pow(acc_lds[0], k_rev);
-                uint64_t tmp_k = acc_res[k];
-                uint64_t tmp_k_p = acc_res[k + p];
+                uint64_t tmp_k = acc_staging[k];
+                uint64_t tmp_k_p = acc_staging[k + p];
 
                 acc_staging[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
                 acc_staging[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
               }
             });
-      });
-
-      q.submit([&](sycl::handler &h) {
-        buf_1d_u64_wr_t acc_res{res, h};
-        buf_1d_u64_rd_t acc_staging{buf_staging, h};
-
-        h.copy(acc_staging, acc_res);
       });
     }
 
