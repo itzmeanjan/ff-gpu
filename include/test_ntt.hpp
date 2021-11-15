@@ -13,3 +13,6 @@ void prepare_random_vector(uint64_t *const vec, const uint64_t size);
 
 void check_ntt_forward_inverse_transform(sycl::queue &q, const uint64_t dim,
                                          const uint64_t wg_size);
+
+void check_cooley_tukey_ntt(sycl::queue &q, const uint64_t dim,
+                            const uint64_t wg_size);
