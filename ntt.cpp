@@ -229,24 +229,33 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
         buf_1d_u64_rd_t acc_omega{buf_omega, h};
         buf_1d_u64_rd_t acc_res{res, h};
         buf_1d_u64_wr_t acc_staging{buf_staging, h};
+        sycl::accessor<uint64_t, 1, sycl::access_mode::read_write,
+                       sycl::target::local>
+            acc_lds{sycl::range<1>{1}, h};
 
         h.parallel_for<class kernelCooleyTukeyFFTMain>(
             sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
             [=](sycl::nd_item<1> it) {
+              sycl::sub_group sg = it.get_sub_group();
+
               const uint64_t k = it.get_global_id(0);
               const uint64_t p = 1ul << i;
               const uint64_t q = dim / p;
 
-              uint64_t z = ff_p_pow(acc_omega[0], p);
+              if (sycl::ext::oneapi::leader(sg)) {
+                acc_lds[0] = ff_p_pow(acc_omega[0], p);
+              }
+
+              sg.barrier();
 
               if (k % p == k % (2 * p)) {
                 uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-                uint64_t z_pow = ff_p_pow(z, k_rev);
+                uint64_t z_pow = ff_p_pow(acc_lds[0], k_rev);
+                uint64_t tmp_k = acc_res[k];
+                uint64_t tmp_k_p = acc_res[k + p];
 
-                acc_staging[k] =
-                    ff_p_add(acc_res[k], ff_p_mult(acc_res[k + p], z_pow));
-                acc_staging[k + p] =
-                    ff_p_sub(acc_res[k], ff_p_mult(acc_res[k + p], z_pow));
+                acc_staging[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_staging[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
               }
             });
       });
@@ -314,24 +323,33 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
         buf_1d_u64_rd_t acc_omega_inv{buf_omega_inv, h};
         buf_1d_u64_rd_t acc_res{res, h};
         buf_1d_u64_wr_t acc_staging{buf_staging, h};
+        sycl::accessor<uint64_t, 1, sycl::access_mode::read_write,
+                       sycl::target::local>
+            acc_lds{sycl::range<1>{1}, h};
 
         h.parallel_for<class kernelCooleyTukeyIFFTMain>(
             sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
             [=](sycl::nd_item<1> it) {
+              sycl::sub_group sg = it.get_sub_group();
+
               const uint64_t k = it.get_global_id(0);
               const uint64_t p = 1ul << i;
               const uint64_t q = dim / p;
 
-              uint64_t z = ff_p_pow(acc_omega_inv[0], p);
+              if (sycl::ext::oneapi::leader(sg)) {
+                acc_lds[0] = ff_p_pow(acc_omega_inv[0], p);
+              }
+
+              sg.barrier();
 
               if (k % p == k % (2 * p)) {
                 uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-                uint64_t z_pow = ff_p_pow(z, k_rev);
+                uint64_t z_pow = ff_p_pow(acc_lds[0], k_rev);
+                uint64_t tmp_k = acc_res[k];
+                uint64_t tmp_k_p = acc_res[k + p];
 
-                acc_staging[k] =
-                    ff_p_add(acc_res[k], ff_p_mult(acc_res[k + p], z_pow));
-                acc_staging[k + p] =
-                    ff_p_sub(acc_res[k], ff_p_mult(acc_res[k + p], z_pow));
+                acc_staging[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_staging[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
               }
             });
       });
