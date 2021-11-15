@@ -58,3 +58,6 @@ extern SYCL_EXTERNAL uint64_t bit_rev(uint64_t v, uint64_t max_bit_width);
 
 void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                       const uint64_t dim, const uint64_t wg_size);
+
+void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
+                       const uint64_t dim, const uint64_t wg_size);
