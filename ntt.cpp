@@ -208,6 +208,8 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
     buf_1d_u64_t buf_omega{omega, sycl::range<1>{1}};
     buf_1d_u64_t buf_staging{staging, sycl::range<1>{dim}};
 
+    compute_omega(q, buf_omega, log_2_dim);
+
     q.submit([&](sycl::handler &h) {
       buf_1d_u64_rd_t acc_vec{vec, h};
       buf_1d_u64_wr_t acc_staging{buf_staging, h, sycl::no_init};
@@ -290,6 +292,8 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
     buf_1d_u64_t buf_omega_inv{omega_inv, sycl::range<1>{1}};
     buf_1d_u64_t buf_dim_inv{dim_inv, sycl::range<1>{1}};
     buf_1d_u64_t buf_staging{staging, sycl::range<1>{dim}};
+
+    compute_omega_inv(q, buf_omega_inv, log_2_dim);
 
     q.submit([&](sycl::handler &h) {
       buf_1d_u64_rd_t acc_vec{vec, h};
