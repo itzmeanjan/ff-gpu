@@ -222,7 +222,7 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
       h.copy(acc_vec, acc_res);
     });
 
-    for (uint64_t i = log_2_dim - 1ul; i >= 0ul; i--) {
+    for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
       q.submit([&](sycl::handler &h) {
         buf_1d_u64_rd_t acc_omega{buf_omega, h};
         buf_1d_u64_rd_t acc_res{res, h};
@@ -305,13 +305,13 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
       h.copy(acc_vec, acc_res);
     });
 
-    for (uint64_t i = log_2_dim - 1ul; i >= 0ul; i--) {
+    for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
       q.submit([&](sycl::handler &h) {
         buf_1d_u64_rd_t acc_omega_inv{buf_omega_inv, h};
         buf_1d_u64_rd_t acc_res{res, h};
         buf_1d_u64_wr_t acc_staging{buf_staging, h};
 
-        h.parallel_for<class kernelCooleyTukeyFFTMain>(
+        h.parallel_for<class kernelCooleyTukeyIFFTMain>(
             sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
             [=](sycl::nd_item<1> it) {
               const uint64_t k = it.get_global_id(0);
@@ -351,7 +351,7 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
        buf_1d_u64_rd_t acc_staging{buf_staging, h};
        buf_1d_u64_rd_t acc_inv_dim{buf_dim_inv, h};
 
-       h.parallel_for<class kernelCooleyTukeyFFTFinalReorder>(
+       h.parallel_for<class kernelCooleyTukeyIFFTFinalReorder>(
            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
            [=](sycl::nd_item<1> it) {
              const uint64_t k = it.get_global_id(0);
