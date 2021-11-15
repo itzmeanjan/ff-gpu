@@ -65,7 +65,7 @@ int64_t benchmark_cooley_tukey_fft(sycl::queue &q, const uint64_t dim,
   std::free(vec_src);
   std::free(vec_fwd);
 
-  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+  return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
       .count();
 }
 
@@ -88,6 +88,6 @@ int64_t benchmark_cooley_tukey_ifft(sycl::queue &q, const uint64_t dim,
   std::free(vec_src);
   std::free(vec_inv);
 
-  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+  return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
       .count();
 }
