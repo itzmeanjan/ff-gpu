@@ -106,18 +106,18 @@ running on Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz
 Cooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      3739 us
-  256                       972 us
-  512                      1235 us
- 1024                      1482 us
+  128                      3403 us
+  256                       571 us
+  512                       819 us
+ 1024                      1033 us
 
 Cooley-Tukey IFFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      5102 us
-  256                      1041 us
-  512                      1086 us
- 1024                      1518 us
+  128                      4819 us
+  256                       613 us
+  512                       768 us
+ 1024                      1108 us
 ```
 
 ```bash
@@ -126,18 +126,18 @@ running on Intel(R) Xeon(R) Gold 6128 CPU @ 3.40GHz
 Cooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      2932 us
-  256                       992 us
-  512                      1174 us
- 1024                      1218 us
+  128                      2145 us
+  256                       563 us
+  512                       633 us
+ 1024                       749 us
 
 Cooley-Tukey IFFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      3417 us
-  256                      1065 us
-  512                      1059 us
- 1024                      1210 us
+  128                      3104 us
+  256                       636 us
+  512                       590 us
+ 1024                       676 us
 ```
 
 ### On GPU
@@ -148,18 +148,18 @@ running on Intel(R) Iris(R) Xe MAX Graphics [0x4905]
 Cooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      1883 us
-  256                      1743 us
-  512                      1835 us
- 1024                      1911 us
+  128                       890 us
+  256                       832 us
+  512                       861 us
+ 1024                       891 us
 
 Cooley-Tukey IFFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      1945 us
-  256                      1941 us
-  512                      2132 us
- 1024                      2186 us
+  128                      1037 us
+  256                      1054 us
+  512                      1137 us
+ 1024                      1084 us
 ```
 
 ```bash
@@ -168,16 +168,16 @@ running on Intel(R) UHD Graphics P630 [0x3e96]
 Cooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      1528 us
-  256                      1270 us
-  512                      1971 us
- 1024                      2381 us
+  128                      1721 us
+  256                      1891 us
+  512                      1847 us
+ 1024                      2031 us
 
 Cooley-Tukey IFFT on F(2**64 - 2**32 + 1) elements 👇
 
 dimension                    total
-  128                      2134 us
-  256                      1610 us
-  512                      2073 us
- 1024                      2303 us
+  128                      1962 us
+  256                      1867 us
+  512                      2314 us
+ 1024                      1918 us
 ```
