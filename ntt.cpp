@@ -212,7 +212,7 @@ uint64_t permute_index(uint64_t idx, uint64_t size) {
     return 0ul;
   }
 
-  uint64_t bits = sycl::ext::intel::ctz(idx);
+  uint64_t bits = sycl::ext::intel::ctz(size);
   return rev_all_bits(idx) >> (64ul - bits);
 }
 
@@ -223,28 +223,24 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
 
   uint64_t *omega = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
-  uint64_t *staging = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
 
   {
     buf_1d_u64_t buf_omega{omega, sycl::range<1>{1}};
-    buf_1d_u64_t buf_staging{staging, sycl::range<1>{dim}};
-
     buf_omega.set_write_back(false);
-    buf_staging.set_write_back(false);
 
     compute_omega(q, buf_omega, log_2_dim);
 
     q.submit([&](sycl::handler &h) {
       buf_1d_u64_rd_t acc_vec{vec, h};
-      buf_1d_u64_wr_t acc_staging{buf_staging, h, sycl::no_init};
+      buf_1d_u64_wr_t acc_res{res, h, sycl::no_init};
 
-      h.copy(acc_vec, acc_staging);
+      h.copy(acc_vec, acc_res);
     });
 
     for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
       q.submit([&](sycl::handler &h) {
         buf_1d_u64_rd_t acc_omega{buf_omega, h};
-        buf_1d_u64_rw_t acc_staging{buf_staging, h};
+        buf_1d_u64_rw_t acc_res{res, h};
 
         h.parallel_for<class kernelCooleyTukeyFFTMain>(
             sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
@@ -260,33 +256,35 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
               if (k % p == k % (2 * p)) {
                 uint64_t k_rev = bit_rev(k, log_2_dim) % q;
                 uint64_t z_pow = ff_p_pow(ω, k_rev);
-                uint64_t tmp_k = acc_staging[k];
-                uint64_t tmp_k_p = acc_staging[k + p];
+                uint64_t tmp_k = acc_res[k];
+                uint64_t tmp_k_p = acc_res[k + p];
 
-                acc_staging[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
-                acc_staging[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_res[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_res[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
               }
             });
       });
     }
 
     q.submit([&](sycl::handler &h) {
-       buf_1d_u64_wr_t acc_res{res, h};
-       buf_1d_u64_rd_t acc_staging{buf_staging, h};
+       buf_1d_u64_rw_t acc_res{res, h};
 
        h.parallel_for<class kernelCooleyTukeyFFTFinalReorder>(
            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
            [=](sycl::nd_item<1> it) {
              const uint64_t k = it.get_global_id(0);
-             const uint64_t k_rev = bit_rev(k, log_2_dim);
+             const uint64_t k_perm = permute_index(k, dim);
 
-             acc_res[k] = acc_staging[k_rev];
+             if (k_perm > k) {
+               const uint64_t tmp = acc_res[k];
+               acc_res[k] = acc_res[k_perm];
+               acc_res[k_perm] = tmp;
+             }
            });
      }).wait();
   }
 
   std::free(omega);
-  std::free(staging);
 }
 
 void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
@@ -297,16 +295,13 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
 
   uint64_t *omega_inv = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
   uint64_t *dim_inv = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
-  uint64_t *staging = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
 
   {
     buf_1d_u64_t buf_omega_inv{omega_inv, sycl::range<1>{1}};
     buf_1d_u64_t buf_dim_inv{dim_inv, sycl::range<1>{1}};
-    buf_1d_u64_t buf_staging{staging, sycl::range<1>{dim}};
 
     buf_omega_inv.set_write_back(false);
     buf_dim_inv.set_write_back(false);
-    buf_staging.set_write_back(false);
 
     compute_omega_inv(q, buf_omega_inv, log_2_dim);
 
@@ -318,15 +313,15 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
 
     q.submit([&](sycl::handler &h) {
       buf_1d_u64_rd_t acc_vec{vec, h};
-      buf_1d_u64_wr_t acc_staging{buf_staging, h, sycl::no_init};
+      buf_1d_u64_wr_t acc_res{res, h, sycl::no_init};
 
-      h.copy(acc_vec, acc_staging);
+      h.copy(acc_vec, acc_res);
     });
 
     for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
       q.submit([&](sycl::handler &h) {
         buf_1d_u64_rd_t acc_omega_inv{buf_omega_inv, h};
-        buf_1d_u64_rw_t acc_staging{buf_staging, h};
+        buf_1d_u64_rw_t acc_res{res, h};
 
         h.parallel_for<class kernelCooleyTukeyIFFTMain>(
             sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
@@ -343,36 +338,40 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
               if (k % p == k % (2 * p)) {
                 uint64_t k_rev = bit_rev(k, log_2_dim) % q;
                 uint64_t z_pow = ff_p_pow(ω, k_rev);
-                uint64_t tmp_k = acc_staging[k];
-                uint64_t tmp_k_p = acc_staging[k + p];
+                uint64_t tmp_k = acc_res[k];
+                uint64_t tmp_k_p = acc_res[k + p];
 
-                acc_staging[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
-                acc_staging[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_res[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_res[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
               }
             });
       });
     }
 
     q.submit([&](sycl::handler &h) {
-       buf_1d_u64_wr_t acc_res{res, h};
-       buf_1d_u64_rd_t acc_staging{buf_staging, h};
+       buf_1d_u64_rw_t acc_res{res, h};
        buf_1d_u64_rd_t acc_inv_dim{buf_dim_inv, h};
 
        h.parallel_for<class kernelCooleyTukeyIFFTFinalReorder>(
            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
            [=](sycl::nd_item<1> it) {
              sycl::sub_group sg = it.get_sub_group();
+             uint64_t inv_dim = sycl::group_broadcast(sg, acc_inv_dim[0]);
 
              const uint64_t k = it.get_global_id(0);
-             const uint64_t k_rev = bit_rev(k, log_2_dim);
+             const uint64_t k_perm = permute_index(k, dim);
 
-             acc_res[k] = ff_p_mult(acc_staging[k_rev],
-                                    sycl::group_broadcast(sg, acc_inv_dim[0]));
+             if (k_perm == k) {
+               acc_res[k] = ff_p_mult(acc_res[k], inv_dim);
+             } else if (k_perm > k) {
+               const uint64_t tmp = ff_p_mult(acc_res[k], inv_dim);
+               acc_res[k] = ff_p_mult(acc_res[k_perm], inv_dim);
+               acc_res[k_perm] = tmp;
+             }
            });
      }).wait();
   }
 
   std::free(omega_inv);
   std::free(dim_inv);
-  std::free(staging);
 }
