@@ -366,26 +366,26 @@ int main(int argc, char **argv) {
 
   std::cout << "\nCooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇\n"
             << std::endl;
-  std::cout << std::setw(5) << "dimension"
-            << "\t\t" << std::setw(10) << "total" << std::endl;
+  std::cout << std::setw(10) << "dimension"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
 
   for (uint dim = B; dim <= (1ul << 23); dim <<= 1) {
     int64_t tm = benchmark_cooley_tukey_fft(q, dim, B);
 
-    std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
-              << std::right << tm << " us" << std::endl;
+    std::cout << std::setw(8) << std::right << dim << "\t\t" << std::setw(15)
+              << std::right << (float)tm / 1000.f << " ms" << std::endl;
   }
 
   std::cout << "\nCooley-Tukey IFFT on F(2**64 - 2**32 + 1) elements 👇\n"
             << std::endl;
-  std::cout << std::setw(5) << "dimension"
-            << "\t\t" << std::setw(10) << "total" << std::endl;
+  std::cout << std::setw(10) << "dimension"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
 
   for (uint dim = B; dim <= (1ul << 23); dim <<= 1) {
     int64_t tm = benchmark_cooley_tukey_ifft(q, dim, B);
 
-    std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
-              << std::right << tm << " us" << std::endl;
+    std::cout << std::setw(8) << std::right << dim << "\t\t" << std::setw(15)
+              << std::right << (float)tm / 1000.f << " ms" << std::endl;
   }
 
   return 0;
