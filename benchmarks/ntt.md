@@ -13,6 +13,52 @@ I keep benchmark results of Cooley-Tukey (Inv-)FFT implementation of NTT 👇.
 ### On CPU
 
 ```bash
+running on Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz
+
+Cooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇
+
+ dimension                        total
+     128                           2.92 ms
+     256                          2.019 ms
+     512                          1.821 ms
+    1024                          2.086 ms
+    2048                          2.371 ms
+    4096                          3.102 ms
+    8192                          3.276 ms
+   16384                          3.683 ms
+   32768                          4.077 ms
+   65536                          4.399 ms
+  131072                          6.279 ms
+  262144                           9.99 ms
+  524288                         18.095 ms
+ 1048576                         33.374 ms
+ 2097152                         64.707 ms
+ 4194304                        128.981 ms
+ 8388608                        263.787 ms
+
+Cooley-Tukey IFFT on F(2**64 - 2**32 + 1) elements 👇
+
+ dimension                        total
+     128                          3.932 ms
+     256                          1.031 ms
+     512                          0.882 ms
+    1024                          0.992 ms
+    2048                          1.158 ms
+    4096                          1.392 ms
+    8192                           1.67 ms
+   16384                          1.822 ms
+   32768                          2.606 ms
+   65536                          2.784 ms
+  131072                          4.932 ms
+  262144                          7.801 ms
+  524288                         16.653 ms
+ 1048576                         35.476 ms
+ 2097152                         61.381 ms
+ 4194304                        131.921 ms
+ 8388608                        267.719 ms
+```
+
+```bash
 running on Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz
 
 Cooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇
