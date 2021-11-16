@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
   std::cout << std::setw(5) << "dimension"
             << "\t\t" << std::setw(10) << "total" << std::endl;
 
-  for (uint dim = B; dim <= N; dim <<= 1) {
+  for (uint dim = B; dim <= (1ul << 23); dim <<= 1) {
     int64_t tm = benchmark_cooley_tukey_fft(q, dim, B);
 
     std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
   std::cout << std::setw(5) << "dimension"
             << "\t\t" << std::setw(10) << "total" << std::endl;
 
-  for (uint dim = B; dim <= N; dim <<= 1) {
+  for (uint dim = B; dim <= (1ul << 23); dim <<= 1) {
     int64_t tm = benchmark_cooley_tukey_ifft(q, dim, B);
 
     std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
