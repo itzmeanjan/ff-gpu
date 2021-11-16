@@ -195,6 +195,18 @@ uint64_t bit_rev(uint64_t v, uint64_t max_bit_width) {
   return v_rev;
 }
 
+uint64_t rev_all_bits(uint64_t n) {
+  uint64_t rev = 0;
+
+  for (uint8_t i = 0; i < 64; i++) {
+    if ((1ul << i) & n) {
+      rev |= (1ul << (63 - i));
+    }
+  }
+
+  return rev;
+}
+
 void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                       const uint64_t dim, const uint64_t wg_size) {
   assert((dim & (dim - 1ul)) == 0);
