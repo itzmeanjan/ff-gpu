@@ -74,6 +74,10 @@ uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
     return 1;
   }
 
+  if(b == 1) {
+    return a;
+  }
+
   if (a == 0) {
     return 0;
   }
