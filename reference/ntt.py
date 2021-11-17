@@ -94,7 +94,7 @@ def six_step_fft(vec):
     n2 = n // n1
 
     # domain should be splitted into either two equal halves
-    # or one half in size of another half
+    # or one double in size of another
     assert n1 == n2 or n2 == 2 * n1
 
     vec_ = vec.copy()
@@ -104,9 +104,20 @@ def six_step_fft(vec):
     # step 1: Transpose
     vec_ = np.transpose(vec_)
 
+    _omega_n1 = get_root_of_unity(int(math.log2(n1)))
+
     # step 2: n2-many (parallel) n1-point FFT
-    for i in range(n2):
-        vec_[i] = forward_transform(vec_[i])
+    for j1 in range(n2):
+
+        # --- perform DFT for elements along selected row ---
+        tmp = gf.Zeros(n1)
+        for k2 in range(n1):
+            for j2 in range(n1):
+                tmp[k2] += (vec_[j1][j2] * (_omega_n1 ** (j2 * k2)))
+        vec_[j1] = tmp
+
+        # @note It's lot faster to replace above block
+        # with vec_[j1] = forward_transform(vec_[j1])
 
     _omega = get_root_of_unity(log_n)
 
@@ -118,9 +129,20 @@ def six_step_fft(vec):
     # step 4: Transpose
     vec_ = np.transpose(vec_)
 
+    _omega_n2 = get_root_of_unity(int(math.log2(n2)))
+
     # step 5: n1-many (parallel) n2-point FFT
-    for i in range(n1):
-        vec_[i] = forward_transform(vec_[i])
+    for j1 in range(n1):
+
+        # --- perform DFT for elements along selected row ---
+        tmp = gf.Zeros(n2)
+        for k2 in range(n2):
+            for j2 in range(n2):
+                tmp[k2] += (vec_[j1][j2] * (_omega_n2 ** (j2 * k2)))
+        vec_[j1] = tmp
+
+        # @note It's lot faster to replace above block
+        # with vec_[j1] = forward_transform(vec_[j1])
 
     # step 6: Transpose
     vec_ = np.transpose(vec_)
@@ -143,7 +165,7 @@ def six_step_ifft(vec):
     n2 = n // n1
 
     # domain should be splitted into either two equal halves
-    # or one double in size of another half
+    # or one double in size of another
     assert n1 == n2 or n2 == 2 * n1
 
     vec_ = vec.copy()
@@ -153,9 +175,20 @@ def six_step_ifft(vec):
     # step 1: Transpose
     vec_ = np.transpose(vec_)
 
+    _inv_omega_n1 = gf(1) / get_root_of_unity(int(math.log2(n1)))
+
     # step 2: n2-many (parallel) n1-point FFT
-    for i in range(n2):
-        vec_[i] = inverse_transform(vec_[i])
+    for j1 in range(n2):
+
+        # --- perform IDFT for elements along selected row ---
+        tmp = gf.Zeros(n1)
+        for k2 in range(n1):
+            for j2 in range(n1):
+                tmp[k2] += (vec_[j1][j2] * (_inv_omega_n1 ** (j2 * k2)))
+        vec_[j1] = tmp
+
+        # @note It's lot faster to replace above block
+        # with vec_[j1] = inverse_transform(vec_[j1])
 
     _omega = gf(1) / get_root_of_unity(log_n)
 
@@ -167,15 +200,27 @@ def six_step_ifft(vec):
     # step 4: Transpose
     vec_ = np.transpose(vec_)
 
+    _inv_omega_n2 = gf(1) / get_root_of_unity(int(math.log2(n2)))
+
     # step 5: n1-many (parallel) n2-point FFT
-    for i in range(n1):
-        vec_[i] = inverse_transform(vec_[i])
+    for j1 in range(n1):
+
+        # --- perform DFT for elements along selected row ---
+        tmp = gf.Zeros(n2)
+        for k2 in range(n2):
+            for j2 in range(n2):
+                tmp[k2] += (vec_[j1][j2] * (_inv_omega_n2 ** (j2 * k2)))
+        vec_[j1] = tmp
+
+        # @note It's lot faster to replace above block
+        # with vec_[j1] = inverse_transform(vec_[j1])
 
     # step 6: Transpose
     vec_ = np.transpose(vec_)
+    _inv_n = gf(1) / gf(n)
 
     # reshape back to vector
-    return vec_.reshape(n)
+    return vec_.reshape(n) * _inv_n
 
 
 def main():
