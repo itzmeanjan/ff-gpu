@@ -1,10 +1,5 @@
 #!/usr/bin/python3
 
-'''
-    Read https://www.nayuki.io/page/number-theoretic-transform-integer-dft for
-    more information
-'''
-
 import galois as gl
 import math
 import numpy as np
@@ -188,24 +183,22 @@ def main():
         n = 1 << i
 
         v = gf.Random(n)
-        v_fwd = forward_transform(v)
-        v_inv = inverse_transform(v_fwd)
 
-        for i in range(n):
-            assert v[i] == v_inv[i], f"expected {v[i]}, found {v_inv[i]}"
+        # Plain & simple (I)DFT
+        v_dft = forward_transform(v)
+        v_idft = inverse_transform(v_dft)
 
-        print(
-            f'passed forward/ inverse transform for {n:>4}-sized random domain')
+        # Six step algorithm based (I)FFT
+        v_fft = six_step_fft(v)
+        v_ifft = six_step_ifft(v_fft)
+
+        assert np.all(v == v_idft)
+        assert np.all(v == v_ifft)
+        assert np.all(v_dft == v_fft)
+
+        print(f'passed (I){{D,F}}FT for {n:>4}-sized random domain')
 
 
 if __name__ == '__main__':
-    # main()
-    # check_correctness(1 << 8)
-    v = gf.Random(1 << 5)
-
-    v_fft = six_step_fft(v)
-    v_dft = forward_transform(v)
-    assert np.all(v_fft == v_dft)
-
-    v_ifft = six_step_ifft(v_fft)
-    assert np.all(v == v_ifft)
+    main()
+    check_correctness(1 << 8)
