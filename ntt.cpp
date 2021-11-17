@@ -251,16 +251,17 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
               const uint64_t p = 1ul << i;
               const uint64_t q = dim / p;
 
-              uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, acc_omega[0]), p);
+              uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+              uint64_t ω =
+                  ff_p_pow(sycl::group_broadcast(sg, acc_omega[0]), p * k_rev);
 
               if (k % p == k % (2 * p)) {
-                uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-                uint64_t z_pow = ff_p_pow(ω, k_rev);
                 uint64_t tmp_k = acc_res[k];
                 uint64_t tmp_k_p = acc_res[k + p];
+                uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
 
-                acc_res[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
-                acc_res[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_res[k] = ff_p_add(tmp_k, tmp_k_p_ω);
+                acc_res[k + p] = ff_p_sub(tmp_k, tmp_k_p_ω);
               }
             });
       });
@@ -276,9 +277,15 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
              const uint64_t k_perm = permute_index(k, dim);
 
              if (k_perm > k) {
-               const uint64_t tmp = acc_res[k];
-               acc_res[k] = acc_res[k_perm];
-               acc_res[k_perm] = tmp;
+               uint64_t a = acc_res[k];
+               uint64_t b = acc_res[k_perm];
+
+               a ^= b;
+               b ^= a;
+               a ^= b;
+
+               acc_res[k] = a;
+               acc_res[k_perm] = b;
              }
            });
      }).wait();
@@ -332,17 +339,17 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
               const uint64_t p = 1ul << i;
               const uint64_t q = dim / p;
 
-              uint64_t ω =
-                  ff_p_pow(sycl::group_broadcast(sg, acc_omega_inv[0]), p);
+              uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+              uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, acc_omega_inv[0]),
+                                    p * k_rev);
 
               if (k % p == k % (2 * p)) {
-                uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-                uint64_t z_pow = ff_p_pow(ω, k_rev);
                 uint64_t tmp_k = acc_res[k];
                 uint64_t tmp_k_p = acc_res[k + p];
+                uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
 
-                acc_res[k] = ff_p_add(tmp_k, ff_p_mult(tmp_k_p, z_pow));
-                acc_res[k + p] = ff_p_sub(tmp_k, ff_p_mult(tmp_k_p, z_pow));
+                acc_res[k] = ff_p_add(tmp_k, tmp_k_p_ω);
+                acc_res[k + p] = ff_p_sub(tmp_k, tmp_k_p_ω);
               }
             });
       });
@@ -364,9 +371,15 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
              if (k_perm == k) {
                acc_res[k] = ff_p_mult(acc_res[k], inv_dim);
              } else if (k_perm > k) {
-               const uint64_t tmp = ff_p_mult(acc_res[k], inv_dim);
-               acc_res[k] = ff_p_mult(acc_res[k_perm], inv_dim);
-               acc_res[k_perm] = tmp;
+               uint64_t a = acc_res[k];
+               uint64_t b = acc_res[k_perm];
+
+               a ^= b;
+               b ^= a;
+               a ^= b;
+
+               acc_res[k] = ff_p_mult(a, inv_dim);
+               acc_res[k_perm] = ff_p_mult(b, inv_dim);
              }
            });
      }).wait();
