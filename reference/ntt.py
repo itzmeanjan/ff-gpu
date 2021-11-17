@@ -49,7 +49,7 @@ def forward_transform(vec):
 
 def inverse_transform(vec):
     '''
-        Adopted from same source, as forward transform is
+        Adopted from same source, as `forward_transform` is
     '''
     n = vec.shape[0]
     assert n & (n-1) == 0, "domain must be of power of two size"
@@ -109,8 +109,8 @@ def six_step_fft(vec):
     # step 1: Transpose
     vec_ = np.transpose(vec_)
 
-    # step 2: n1-many (parallel) n2-point FFT
-    for i in range(vec_.shape[0]):
+    # step 2: n2-many (parallel) n1-point FFT
+    for i in range(n2):
         vec_[i] = forward_transform(vec_[i])
 
     _omega = get_root_of_unity(int(math.log2(n)))
@@ -123,8 +123,8 @@ def six_step_fft(vec):
     # step 4: Transpose
     vec_ = np.transpose(vec_)
 
-    # step 5: n2-many (parallel) n1-point FFT
-    for i in range(vec_.shape[0]):
+    # step 5: n1-many (parallel) n2-point FFT
+    for i in range(n1):
         vec_[i] = forward_transform(vec_[i])
 
     # step 6: Transpose
