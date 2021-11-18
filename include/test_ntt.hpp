@@ -16,3 +16,9 @@ void check_ntt_forward_inverse_transform(sycl::queue &q, const uint64_t dim,
 
 void check_cooley_tukey_ntt(sycl::queue &q, const uint64_t dim,
                             const uint64_t wg_size);
+
+// Asserts parallel in-place square matrix transposition
+// by performing double transpose of same matrix & finally
+// parallelly asserting cells, using atomics
+void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size);

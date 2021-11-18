@@ -218,3 +218,55 @@ void check_cooley_tukey_ntt(sycl::queue &q, const uint64_t dim,
   std::free(vec_fwd);
   std::free(vec_inv);
 }
+
+void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size) {
+  uint64_t *vec = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
+  uint64_t *vec_cpy =
+      static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
+
+  prepare_random_vector(vec, dim * dim);
+  memcpy(vec_cpy, vec, sizeof(uint64_t) * dim * dim);
+
+  {
+    buf_1d_u64_t buf_vec{vec, sycl::range<1>{dim * dim}};
+    buf_1d_u64_t buf_vec_cpy{vec_cpy, sycl::range<1>{dim * dim}};
+
+    matrix_transpose(q, buf_vec, dim, wg_size);
+    matrix_transpose(q, buf_vec, dim, wg_size);
+
+    uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+    memset(mismatch, 0, sizeof(uint64_t));
+
+    {
+      buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+      q.submit([&](sycl::handler &h) {
+        buf_1d_u64_rd_t acc_vec{buf_vec, h};
+        buf_1d_u64_rd_t acc_vec_cpy{buf_vec_cpy, h};
+        buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+        h.parallel_for(sycl::nd_range<2>{sycl::range<2>{dim, dim},
+                                         sycl::range<2>{wg_size, 1}},
+                       [=](sycl::nd_item<2> it) {
+                         const size_t l_idx = it.get_global_linear_id();
+
+                         sycl::ext::oneapi::atomic_ref<
+                             uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                             sycl::memory_scope::device,
+                             sycl::access::address_space::global_device_space>
+                             corr_ref{acc_mismatch[0]};
+                         corr_ref.fetch_add(
+                             acc_vec[l_idx] == acc_vec_cpy[l_idx] ? 0 : 1);
+                       });
+      });
+      q.wait();
+    }
+
+    assert(*mismatch == 0);
+    std::free(mismatch);
+  }
+
+  std::free(vec);
+  std::free(vec_cpy);
+}
