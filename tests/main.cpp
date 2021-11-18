@@ -32,6 +32,8 @@ int main(int argc, char **argv) {
   std::cout << "✅ passed NTT forward/ inverse transform test" << std::endl;
   check_cooley_tukey_ntt(q, 1 << 10, 1 << 6);
   std::cout << "✅ passed Cooley-Tukey NTT test" << std::endl;
+  check_matrix_transposition(q, 1 << 10, 1 << 6);
+  std::cout << "✅ passed square matrix transposition test" << std::endl;
 
   return 0;
 }
