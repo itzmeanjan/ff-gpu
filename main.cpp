@@ -388,5 +388,19 @@ int main(int argc, char **argv) {
               << std::right << (float)tm / 1000.f << " ms" << std::endl;
   }
 
+  std::cout
+      << "\nSquare Matrix Transposition on F(2**64 - 2**32 + 1) elements 👇\n"
+      << std::endl;
+  std::cout << std::setw(10) << "dimension"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
+
+  for (uint dim = B; dim <= (1ul << 12); dim <<= 1) {
+    int64_t tm = benchmark_matrix_transposition(q, dim, B);
+
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t" << std::setw(15) << std::right
+              << (float)tm / 1000.f << " ms" << std::endl;
+  }
+
   return 0;
 }
