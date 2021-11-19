@@ -26,3 +26,6 @@ void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
 void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
                                         const uint64_t n2,
                                         const uint64_t wg_size);
+
+void test_six_step_fft(sycl::queue &q, const uint64_t dim,
+                       const uint64_t wg_size);
