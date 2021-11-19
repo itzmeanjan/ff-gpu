@@ -94,19 +94,22 @@ int64_t benchmark_cooley_tukey_ifft(sycl::queue &q, const uint64_t dim,
 
 int64_t benchmark_matrix_transposition(sycl::queue &q, const uint64_t dim,
                                        const uint64_t wg_size) {
-  uint64_t *vec = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim * dim));
+  uint64_t *vec_h = static_cast<uint64_t *>(
+      sycl::malloc_host(sizeof(uint64_t) * dim * dim, q));
+  uint64_t *vec_d = static_cast<uint64_t *>(
+      sycl::malloc_device(sizeof(uint64_t) * dim * dim, q));
 
-  prepare_random_vector(vec, dim * dim);
+  prepare_random_vector(vec_h, dim * dim);
+
+  sycl::event evt_0 = q.memcpy(vec_d, vec_h, sizeof(uint64_t) * dim * dim);
+  evt_0.wait();
 
   tp start = std::chrono::steady_clock::now();
-  {
-    buf_1d_u64_t buf_vec{vec, sycl::range<1>{dim * dim}};
-
-    matrix_transpose(q, buf_vec, dim, wg_size).wait();
-  }
+  matrix_transpose(q, vec_d, dim, wg_size, {}).wait();
   tp end = std::chrono::steady_clock::now();
 
-  std::free(vec);
+  sycl::free(vec_h, q);
+  sycl::free(vec_d, q);
 
   return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
       .count();

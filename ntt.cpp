@@ -389,10 +389,11 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   std::free(dim_inv);
 }
 
-sycl::event matrix_transpose(sycl::queue &q, buf_1d_u64_t &vec,
-                             const uint64_t dim, const uint64_t wg_size) {
+sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
+                             const uint64_t wg_size,
+                             std::vector<sycl::event> evts) {
   return q.submit([&](sycl::handler &h) {
-    buf_1d_u64_rw_t acc_vec{vec, h};
+    h.depends_on(evts);
 
     h.parallel_for<class kernelMatrixTransposition>(
         sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
@@ -403,15 +404,15 @@ sycl::event matrix_transpose(sycl::queue &q, buf_1d_u64_t &vec,
             size_t src = r * dim + c;
             size_t dst = c * dim + r;
 
-            uint64_t src_v = acc_vec[src];
-            uint64_t dst_v = acc_vec[dst];
+            uint64_t src_v = *(vec + src);
+            uint64_t dst_v = *(vec + dst);
 
             src_v ^= dst_v;
             dst_v ^= src_v;
             src_v ^= dst_v;
 
-            acc_vec[src] = src_v;
-            acc_vec[dst] = dst_v;
+            *(vec + src) = src_v;
+            *(vec + dst) = dst_v;
           }
         });
   });
