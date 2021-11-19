@@ -96,4 +96,4 @@ sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
                                    uint64_t *omega, const uint64_t rows,
                                    const uint64_t cols, const uint64_t width,
                                    const uint64_t wg_size,
-                                   std::vector<sycl::event> &evts);
+                                   std::vector<sycl::event> evts);
