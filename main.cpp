@@ -402,5 +402,27 @@ int main(int argc, char **argv) {
               << (float)tm / 1000.f << " ms" << std::endl;
   }
 
+  std::cout
+      << "\nTwiddle Factor Multiplication on F(2**64 - 2**32 + 1) elements 👇\n"
+      << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
+
+  for (uint pow = 6; pow <= 10; pow++) {
+    int64_t tm =
+        benchmark_twiddle_factor_multiplication(q, 1 << pow, 1 << pow, 1 << 6);
+
+    std::cout << std::setw(5) << std::left << (1 << pow) << "x" << std::setw(5)
+              << std::right << (1 << pow) << "\t\t" << std::setw(15)
+              << std::right << (float)tm / 1000.f << " ms" << std::endl;
+
+    tm = benchmark_twiddle_factor_multiplication(q, 1 << pow, 1 << (pow + 1),
+                                                 1 << 6);
+
+    std::cout << std::setw(5) << std::left << (1 << pow) << "x" << std::setw(5)
+              << std::right << (1 << (pow + 1)) << "\t\t" << std::setw(15)
+              << std::right << (float)tm / 1000.f << " ms" << std::endl;
+  }
+
   return 0;
 }
