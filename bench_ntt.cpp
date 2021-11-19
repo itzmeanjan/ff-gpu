@@ -130,7 +130,9 @@ int64_t benchmark_twiddle_factor_multiplication(sycl::queue &q,
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
 
   q.memset(vec_h, 0, sizeof(uint64_t) * n * n).wait();
-  q.single_task([=]() { *omega = get_root_of_unity(n1 * n2); }).wait();
+  q.single_task([=]() {
+     *omega = get_root_of_unity((uint64_t)sycl::log2((float)n1 * n2));
+   }).wait();
 
   std::random_device rd;
   std::mt19937 gen(rd());
