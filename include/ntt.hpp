@@ -97,3 +97,6 @@ sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
                                    const uint64_t cols, const uint64_t width,
                                    const uint64_t wg_size,
                                    std::vector<sycl::event> evts);
+
+void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
+                  const uint64_t wg_size);

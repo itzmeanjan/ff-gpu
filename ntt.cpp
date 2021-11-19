@@ -513,3 +513,89 @@ sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
         });
   });
 }
+
+void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
+                  const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  uint64_t n1 = 1 << (log_2_dim / 2);
+  uint64_t n2 = dim / n1;
+  uint64_t n = sycl::max(n1, n2);
+  uint64_t log_2_n1 = (uint64_t)sycl::log2((float)n1);
+  uint64_t log_2_n2 = (uint64_t)sycl::log2((float)n2);
+
+  assert(n1 == n2 || n2 == 2 * n1);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_ =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n * n, q));
+  uint64_t *omega_dim =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_n1 =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_n2 =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+
+  // compute i-th root of unity, where n = {dim, n1, n2}
+  sycl::event evt_0 =
+      q.single_task([=]() { *omega_dim = get_root_of_unity(log_2_dim); });
+  sycl::event evt_1 =
+      q.single_task([=]() { *omega_n1 = get_root_of_unity(log_2_n1); });
+  sycl::event evt_2 =
+      q.single_task([=]() { *omega_n2 = get_root_of_unity(log_2_n2); });
+
+  // copy data to newly allocated memory, where FFT to be run
+  // finally at end result to be copied back to input vector
+  sycl::event evt_3 = q.memcpy(vec_, vec, sizeof(uint64_t) * dim);
+
+  // Step 1: Transpose Matrix
+  sycl::event evt_4 = matrix_transpose(q, vec_, n, wg_size, {evt_3});
+
+  std::vector<sycl::event> evts;
+  evts.reserve(n2 + 1);
+  evts.push_back(evt_0);
+
+  // Step 2: n2-many parallel n1-point Cooley-Tukey style FFT
+  for (uint64_t i = 0; i < n2; i++) {
+    sycl::event evt =
+        row_fft(q, vec_ + i * n, omega_n1, n1, wg_size, {evt_1, evt_4});
+    evts.push_back(evt);
+  }
+
+  // Step 3: Multiply by twiddle factors
+  sycl::event evt_5 =
+      twiddle_multiplication(q, vec_, omega_dim, n2, n1, n, wg_size, evts);
+
+  // Step 4: Transpose Matrix
+  sycl::event evt_6 = matrix_transpose(q, vec_, n, wg_size, {evt_5});
+
+  evts.clear();
+  evts.resize(n1);
+
+  // Step 5: n1-many parallel n2-point Cooley-Tukey FFT
+  for (uint64_t i = 0; i < n1; i++) {
+    sycl::event evt =
+        row_fft(q, vec_ + i * n, omega_n2, n2, wg_size, {evt_2, evt_6});
+    evts.push_back(evt);
+  }
+
+  // Step 6: Transpose Matrix
+  sycl::event evt_7 = matrix_transpose(q, vec_, n, wg_size, evts);
+
+  // copy result back to source matrix
+  sycl::event evt_8 = q.submit([&](sycl::handler &h) {
+    h.depends_on(evt_7);
+
+    h.parallel_for<class kernelFFTCopyBack>(
+        sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          const size_t r = it.get_global_id(0);
+          const size_t c = it.get_global_id(1);
+
+          *(vec + it.get_global_linear_id()) = *(vec_ + r * n + c);
+        });
+  });
+
+  evt_8.wait();
+}
