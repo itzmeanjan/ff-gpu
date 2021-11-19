@@ -38,6 +38,9 @@ int main(int argc, char **argv) {
   test_twiddle_factor_multiplication(q, 1 << 10, 1 << 11, 1 << 6);
   std::cout << "✅ passed twiddle factor multiplication test [rect/ square]"
             << std::endl;
+  test_six_step_fft(q, 1 << 20, 1 << 7);
+  test_six_step_fft(q, 1 << 21, 1 << 7);
+  std::cout << "✅ passed six step FFT test [rect/ square]" << std::endl;
 
   return 0;
 }
