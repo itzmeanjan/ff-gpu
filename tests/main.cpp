@@ -34,6 +34,10 @@ int main(int argc, char **argv) {
   std::cout << "✅ passed Cooley-Tukey NTT test" << std::endl;
   check_matrix_transposition(q, 1 << 10, 1 << 6);
   std::cout << "✅ passed square matrix transposition test" << std::endl;
+  test_twiddle_factor_multiplication(q, 1 << 10, 1 << 10, 1 << 6);
+  test_twiddle_factor_multiplication(q, 1 << 10, 1 << 11, 1 << 6);
+  std::cout << "✅ passed twiddle factor multiplication test [rect/ square]"
+            << std::endl;
 
   return 0;
 }
