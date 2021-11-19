@@ -22,3 +22,7 @@ void check_cooley_tukey_ntt(sycl::queue &q, const uint64_t dim,
 // parallelly asserting cells, using atomics
 void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
                                 const uint64_t wg_size);
+
+void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
+                                        const uint64_t n2,
+                                        const uint64_t wg_size);
