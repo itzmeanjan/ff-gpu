@@ -75,3 +75,13 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
 sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
                              const uint64_t wg_size,
                              std::vector<sycl::event> evts);
+
+// Performs parallel in-place FFT based on Cooley-Tukey style while taking USM
+// based memory pointer as input data location
+//
+// @note For kernel execution ordering consider using events vector parameter
+// and return event type properly, otherwise it'll result into data race, as
+// dependency needs to be managed manually due to no use of SYCL buffers
+sycl::event row_fft(sycl::queue &q, uint64_t *vec, uint64_t *omega,
+                    const uint64_t dim, const uint64_t wg_size,
+                    std::vector<sycl::event> evts);
