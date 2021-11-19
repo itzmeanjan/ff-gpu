@@ -488,3 +488,28 @@ sycl::event row_fft(sycl::queue &q, uint64_t *vec, uint64_t *omega,
         });
   });
 }
+
+sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
+                                   uint64_t *omega, const uint64_t rows,
+                                   const uint64_t cols, const uint64_t width,
+                                   const uint64_t wg_size,
+                                   std::vector<sycl::event> &evts) {
+  assert(cols == width || 2 * cols == width);
+
+  return q.submit([&](sycl::handler &h) {
+    h.depends_on(evts);
+    h.parallel_for<class kernelTwiddleFactorMultiplication>(
+        sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                          sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          sycl::sub_group sg = it.get_sub_group();
+
+          const size_t r = it.get_global_id(0);
+          const size_t c = it.get_global_id(1);
+
+          *(vec + r * width + c) =
+              ff_p_mult(*(vec + r * width + c),
+                        ff_p_pow(sycl::group_broadcast(sg, *omega), r * c));
+        });
+  });
+}
