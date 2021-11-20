@@ -598,6 +598,11 @@ void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   });
 
   evt_8.wait();
+
+  sycl::free(vec_, q);
+  sycl::free(omega_dim, q);
+  sycl::free(omega_n1, q);
+  sycl::free(omega_n2, q);
 }
 
 void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
@@ -622,6 +627,8 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
   uint64_t *omega_n2_inv =
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_domain_size_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
 
   // compute inverse of i-th root of unity, where n = {dim, n1, n2}
   sycl::event evt_0 = q.single_task(
@@ -630,6 +637,8 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
       [=]() { *omega_n1_inv = ff_p_inv(get_root_of_unity(log_2_n1)); });
   sycl::event evt_2 = q.single_task(
       [=]() { *omega_n2_inv = ff_p_inv(get_root_of_unity(log_2_n2)); });
+  sycl::event evt_8 =
+      q.single_task([=]() { *omega_domain_size_inv = ff_p_inv(dim); });
 
   // copy data to newly allocated memory, where IFFT to be run
   // finally at end, result to be copied back to input vector
@@ -669,19 +678,30 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   // Step 6: Transpose Matrix
   sycl::event evt_7 = matrix_transpose(q, vec_, n, wg_size, evts);
 
-  // copy result back to source matrix
-  sycl::event evt_8 = q.submit([&](sycl::handler &h) {
-    h.depends_on(evt_7);
+  // copy result back to source matrix, while
+  // also multiplying by inverse of domain size
+  sycl::event evt_9 = q.submit([&](sycl::handler &h) {
+    h.depends_on({evt_7, evt_8});
 
     h.parallel_for<class kernelIFFTCopyBack>(
         sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, wg_size}},
         [=](sycl::nd_item<2> it) {
+          sycl::sub_group sg = it.get_sub_group();
+
           const size_t r = it.get_global_id(0);
           const size_t c = it.get_global_id(1);
 
-          *(vec + it.get_global_linear_id()) = *(vec_ + r * n + c);
+          *(vec + it.get_global_linear_id()) =
+              ff_p_mult(sycl::group_broadcast(sg, *omega_domain_size_inv),
+                        *(vec_ + r * n + c));
         });
   });
 
-  evt_8.wait();
+  evt_9.wait();
+
+  sycl::free(vec_, q);
+  sycl::free(omega_dim_inv, q);
+  sycl::free(omega_n1_inv, q);
+  sycl::free(omega_n2_inv, q);
+  sycl::free(omega_domain_size_inv, q);
 }
