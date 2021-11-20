@@ -76,6 +76,13 @@ sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
                              const uint64_t wg_size,
                              std::vector<sycl::event> evts);
 
+sycl::event matrix_transposed_initialise(sycl::queue &q, uint64_t *vec_src,
+                                         uint64_t *vec_dst, const uint64_t rows,
+                                         const uint64_t cols,
+                                         const uint64_t width,
+                                         const uint64_t wg_size,
+                                         std::vector<sycl::event> evts);
+
 /* Performs parallel in-place (I)FFT based on Cooley-Tukey style while taking
  USM based memory pointer as input data location.
 
