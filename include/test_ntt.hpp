@@ -29,3 +29,6 @@ void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
 
 void test_six_step_fft(sycl::queue &q, const uint64_t dim,
                        const uint64_t wg_size);
+
+void test_six_step_ifft(sycl::queue &q, const uint64_t dim,
+                        const uint64_t wg_size);
