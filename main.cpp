@@ -424,5 +424,31 @@ int main(int argc, char **argv) {
               << std::right << (float)tm / 1000.f << " ms" << std::endl;
   }
 
+  std::cout << "\nSix-Step FFT on F(2**64 - 2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
+
+  for (uint dim = 12; dim <= 24; dim++) {
+    int64_t tm = benchmark_six_step_fft(q, 1ul << dim, 1 << 6);
+
+    std::cout << std::setw(9) << std::right << (1ul << dim) << "\t\t"
+              << std::setw(15) << std::right << (float)tm / 1000.f << " ms"
+              << std::endl;
+  }
+
+  std::cout << "\nSix-Step IFFT on F(2**64 - 2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
+
+  for (uint dim = 12; dim <= 24; dim++) {
+    int64_t tm = benchmark_six_step_ifft(q, 1ul << dim, 1 << 6);
+
+    std::cout << std::setw(9) << std::right << (1ul << dim) << "\t\t"
+              << std::setw(15) << std::right << (float)tm / 1000.f << " ms"
+              << std::endl;
+  }
+
   return 0;
 }
