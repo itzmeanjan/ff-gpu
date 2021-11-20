@@ -166,7 +166,7 @@ int64_t benchmark_six_step_fft(sycl::queue &q, const uint64_t dim,
   uint64_t *vec_d =
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
 
-  prepare_random_vector(vec_h, sizeof(uint64_t) * dim);
+  prepare_random_vector(vec_h, dim);
   q.memcpy(vec_d, vec_h, sizeof(uint64_t) * dim).wait();
 
   tp start = std::chrono::steady_clock::now();
@@ -187,7 +187,7 @@ int64_t benchmark_six_step_ifft(sycl::queue &q, const uint64_t dim,
   uint64_t *vec_d =
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
 
-  prepare_random_vector(vec_h, sizeof(uint64_t) * dim);
+  prepare_random_vector(vec_h, dim);
   q.memcpy(vec_d, vec_h, sizeof(uint64_t) * dim).wait();
 
   tp start = std::chrono::steady_clock::now();
