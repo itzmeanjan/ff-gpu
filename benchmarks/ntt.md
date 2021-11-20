@@ -1,10 +1,131 @@
 ## Benchmarking NTT on F(2 ** 64 - 2 ** 32 + 1) Elements
 
-I benchmark both *DFT*-style and Cooley-Tukey Forward/ Inverse **N**umber **T**heoretic **T**ransform with random elements sampled from aforementioned prime field, with vector(s) of size N = 2 ** i, i > 0.
+I benchmark *DFT*-style, *Cooley-Tukey* Forward/ Inverse NTT and *Six-step algorithm* based (I)NTT with random elements sampled from aforementioned prime field, with vector(s) of size N = 2 ** i, i > 0.
 
-> DFT-style NTT computes DFT matrix & uses matrix-vector multiplication !
+> DFT-style NTT computes DFT matrix & uses matrix-vector multiplication - *so it's not efficient* !
 
-> Note: These benchmarks include time required to transfer input/ ouput vector(s) to/ from device.
+## Six Step Algorithm based (I)NTT
+
+I ran my (I)NTT implementation, based on six-step (I)FFT, on multiple CPU(s)/ GPU(s) & benchmark results are presented below.
+
+### On CPU
+
+```bash
+running on Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz
+
+Six-Step FFT on F(2**64 - 2**32 + 1) elements 👇
+
+  dimension                       total
+     4096                        12.341 ms
+     8192                         5.134 ms
+    16384                         4.486 ms
+    32768                         4.773 ms
+    65536                         5.252 ms
+   131072                         6.898 ms
+   262144                        10.651 ms
+   524288                        42.982 ms
+  1048576                        23.412 ms
+  2097152                        87.797 ms
+  4194304                        83.066 ms
+  8388608                       216.817 ms
+ 16777216                        331.26 ms
+
+Six-Step IFFT on F(2**64 - 2**32 + 1) elements 👇
+
+  dimension                       total
+     4096                          8.53 ms
+     8192                         1.355 ms
+    16384                         1.763 ms
+    32768                           2.4 ms
+    65536                         3.051 ms
+   131072                         4.338 ms
+   262144                         7.251 ms
+   524288                        30.862 ms
+  1048576                        22.251 ms
+  2097152                        81.422 ms
+  4194304                         85.92 ms
+  8388608                       210.183 ms
+ 16777216                       313.521 ms
+```
+
+```bash
+running on Intel(R) Xeon(R) Gold 6128 CPU @ 3.40GHz
+
+Six-Step FFT on F(2**64 - 2**32 + 1) elements 👇
+
+  dimension                       total
+     4096                         9.849 ms
+     8192                         1.324 ms
+    16384                         1.669 ms
+    32768                         3.312 ms
+    65536                         5.509 ms
+   131072                         9.569 ms
+   262144                        16.477 ms
+   524288                        34.057 ms
+  1048576                         65.39 ms
+  2097152                           136 ms
+  4194304                       261.959 ms
+  8388608                         585.3 ms
+ 16777216                       1239.32 ms
+
+Six-Step IFFT on F(2**64 - 2**32 + 1) elements 👇
+
+  dimension                       total
+     4096                         7.985 ms
+     8192                         1.569 ms
+    16384                         2.276 ms
+    32768                         3.804 ms
+    65536                         6.225 ms
+   131072                        10.296 ms
+   262144                        16.475 ms
+   524288                         36.86 ms
+  1048576                        66.395 ms
+  2097152                       139.875 ms
+  4194304                       268.897 ms
+  8388608                       585.569 ms
+ 16777216                       1198.84 ms
+```
+
+### On GPU
+
+
+```bash
+running on Intel(R) Iris(R) Xe MAX Graphics [0x4905]
+
+Six-Step FFT on F(2**64 - 2**32 + 1) elements 👇
+
+  dimension                       total
+     4096                         0.689 ms
+     8192                         0.783 ms
+    16384                         0.933 ms
+    32768                         1.448 ms
+    65536                         2.159 ms
+   131072                         3.703 ms
+   262144                         7.186 ms
+   524288                        15.541 ms
+  1048576                          30.9 ms
+  2097152                        67.108 ms
+  4194304                       134.443 ms
+  8388608                       290.295 ms
+ 16777216                       596.584 ms
+
+Six-Step IFFT on F(2**64 - 2**32 + 1) elements 👇
+
+  dimension                       total
+     4096                         0.915 ms
+     8192                         1.026 ms
+    16384                         1.178 ms
+    32768                         1.714 ms
+    65536                         2.464 ms
+   131072                          4.05 ms
+   262144                         7.519 ms
+   524288                        15.979 ms
+  1048576                        31.234 ms
+  2097152                        67.524 ms
+  4194304                       134.651 ms
+  8388608                       290.647 ms
+ 16777216                       596.639 ms
+```
 
 ## Cooley-Tukey (Inv-)FFT
 

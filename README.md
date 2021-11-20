@@ -10,7 +10,12 @@ In this repository, currently I keep implementation of two finite field's arithm
 - Binary Extension Field `F(2 ** 32)`
 - Prime Field `F(2 ** 64 - 2 ** 32 + 1)`
 
-I've also written Rescue Prime Hash function implementation, along with benchmark results on CPU, GPU.
+I've also written following implementations, along with benchmark results on CPU, GPU.
+
+- Rescue Prime Hash function
+- Six step algorithm based (I)*N*umber *T*heoretic *T*ransform
+- Cooley-Tukey algorithm based (I)NTT
+- DFT-style (I)NTT
 
 ## Prerequisites
 
@@ -87,6 +92,9 @@ I run benchmarking code on both **CPU** and **GPGPU**, keeping results 👇
 - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
 - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
 - [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/rescue_prime.md)
+- [Six step algorithm-based (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#six-step-algorithm-based-intt)
+- [Cooley-Tukey (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#cooley-tukey-inv-fft)
+- [DFT-style (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#dft-style-ntt)
 
 ## Tests
 
