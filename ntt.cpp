@@ -420,8 +420,7 @@ sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
 
 sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
                                const uint64_t rows, const uint64_t cols,
-                               const uint64_t width, const uint64_t r_wg_size,
-                               const uint64_t c_wg_size,
+                               const uint64_t width, const uint64_t wg_size,
                                std::vector<sycl::event> evts) {
   uint64_t log_2_dim = (uint64_t)sycl::log2((float)cols);
 
@@ -443,7 +442,7 @@ sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
 
       h.parallel_for<class kernelCooleyTukeyRowWiseFFT>(
           sycl::nd_range<2>{sycl::range<2>{rows, cols},
-                            sycl::range<2>{r_wg_size, c_wg_size}},
+                            sycl::range<2>{1, wg_size}},
           [=](sycl::nd_item<2> it) {
             sycl::sub_group sg = it.get_sub_group();
 
@@ -474,7 +473,7 @@ sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
     h.depends_on(_evts.at(log_2_dim - 1));
     h.parallel_for<class kernelCooleyTukeyRowWiseFFTFinalReorder>(
         sycl::nd_range<2>{sycl::range<2>{rows, cols},
-                          sycl::range<2>{r_wg_size, c_wg_size}},
+                          sycl::range<2>{1, wg_size}},
         [=](sycl::nd_item<2> it) {
           const uint64_t r = it.get_global_id(0);
           const uint64_t k = it.get_global_id(1);
@@ -559,19 +558,19 @@ void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   sycl::event evt_4 = matrix_transpose(q, vec_, n, wg_size, {evt_3});
 
   // Step 2: n2-many parallel n1-point Cooley-Tukey style FFT
-  sycl::event evt_5 = row_wise_transform(q, vec_, omega_n1, n2, n1, n, 1ul << 5,
-                                         1ul << 5, {evt_1, evt_4});
+  sycl::event evt_5 =
+      row_wise_transform(q, vec_, omega_n1, n2, n1, n, n1, {evt_1, evt_4});
 
   // Step 3: Multiply by twiddle factors
-  sycl::event evt_6 = twiddle_multiplication(q, vec_, omega_dim, n2, n1, n,
-                                             wg_size, {evt_0, evt_5});
+  sycl::event evt_6 =
+      twiddle_multiplication(q, vec_, omega_dim, n2, n1, n, n1, {evt_0, evt_5});
 
   // Step 4: Transpose Matrix
   sycl::event evt_7 = matrix_transpose(q, vec_, n, wg_size, {evt_6});
 
   // Step 5: n1-many parallel n2-point Cooley-Tukey FFT
-  sycl::event evt_8 = row_wise_transform(q, vec_, omega_n2, n1, n2, n, 1ul << 5,
-                                         1ul << 5, {evt_2, evt_7});
+  sycl::event evt_8 =
+      row_wise_transform(q, vec_, omega_n2, n1, n2, n, n2, {evt_2, evt_7});
 
   // Step 6: Transpose Matrix
   sycl::event evt_9 = matrix_transpose(q, vec_, n, wg_size, {evt_8});
@@ -581,7 +580,7 @@ void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
     h.depends_on(evt_9);
 
     h.parallel_for<class kernelFFTCopyBack>(
-        sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, wg_size}},
+        sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, n1}},
         [=](sycl::nd_item<2> it) {
           const size_t r = it.get_global_id(0);
           const size_t c = it.get_global_id(1);
@@ -641,19 +640,19 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   sycl::event evt_5 = matrix_transpose(q, vec_, n, wg_size, {evt_4});
 
   // Step 2: n2-many parallel n1-point Cooley-Tukey style IFFT
-  sycl::event evt_6 = row_wise_transform(q, vec_, omega_n1_inv, n2, n1, n,
-                                         1ul << 5, 1ul << 5, {evt_1, evt_5});
+  sycl::event evt_6 =
+      row_wise_transform(q, vec_, omega_n1_inv, n2, n1, n, n1, {evt_1, evt_5});
 
   // Step 3: Multiply by twiddle factors
   sycl::event evt_7 = twiddle_multiplication(q, vec_, omega_dim_inv, n2, n1, n,
-                                             wg_size, {evt_6, evt_0});
+                                             n1, {evt_6, evt_0});
 
   // Step 4: Transpose Matrix
   sycl::event evt_8 = matrix_transpose(q, vec_, n, wg_size, {evt_7});
 
   // Step 5: n1-many parallel n2-point Cooley-Tukey IFFT
-  sycl::event evt_9 = row_wise_transform(q, vec_, omega_n2_inv, n1, n2, n,
-                                         1ul << 5, 1ul << 5, {evt_2, evt_8});
+  sycl::event evt_9 =
+      row_wise_transform(q, vec_, omega_n2_inv, n1, n2, n, n2, {evt_2, evt_8});
 
   // Step 6: Transpose Matrix
   sycl::event evt_10 = matrix_transpose(q, vec_, n, wg_size, {evt_9});
@@ -664,8 +663,7 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
     h.depends_on({evt_10, evt_3});
 
     h.parallel_for<class kernelIFFTCopyBack>(
-        sycl::nd_range<2>{sycl::range<2>{n2, n1},
-                          sycl::range<2>{1ul << 5, 1ul << 5}},
+        sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, n1}},
         [=](sycl::nd_item<2> it) {
           sycl::sub_group sg = it.get_sub_group();
 
