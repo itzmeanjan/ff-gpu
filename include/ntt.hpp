@@ -66,14 +66,16 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
 void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                        const uint64_t dim, const uint64_t wg_size);
 
-// Computes in-place parallel *square* matrix transposition
+// Computes blocked in-place parallel *square* matrix transposition
+//
+// Inspired from CUDA implementation
+// https://forums.developer.nvidia.com/t/efficient-in-place-transpose-of-multiple-square-float-matrices/34327/4
 //
 // If matrix is not square, consider padding empty rows,
 // as it's easy to do in row-major indexing
 //
 // Matrix is represented as 1d array
-sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
-                             const uint64_t wg_size,
+sycl::event matrix_transpose(sycl::queue &q, uint64_t *data, const uint64_t dim,
                              std::vector<sycl::event> evts);
 
 sycl::event matrix_transposed_initialise(sycl::queue &q, uint64_t *vec_src,

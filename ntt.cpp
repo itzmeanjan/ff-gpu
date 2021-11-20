@@ -389,30 +389,70 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   std::free(dim_inv);
 }
 
-sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
-                             const uint64_t wg_size,
+sycl::event matrix_transpose(sycl::queue &q, uint64_t *data, const uint64_t dim,
                              std::vector<sycl::event> evts) {
+  constexpr size_t TILE_DIM = 1 << 5;
+  constexpr size_t BLOCK_ROWS = 1 << 3;
+
   return q.submit([&](sycl::handler &h) {
+    sycl::accessor<uint64_t, 2, sycl::access_mode::read_write,
+                   sycl::target::local>
+        tile_s{sycl::range<2>{TILE_DIM, TILE_DIM + 1}, h};
+    sycl::accessor<uint64_t, 2, sycl::access_mode::read_write,
+                   sycl::target::local>
+        tile_d{sycl::range<2>{TILE_DIM, TILE_DIM + 1}, h};
+
     h.depends_on(evts);
-
     h.parallel_for<class kernelMatrixTransposition>(
-        sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
-        [=](sycl::nd_item<1> it) {
-          const size_t r = it.get_global_id(0);
+        sycl::nd_range<2>{sycl::range<2>{dim / (TILE_DIM / BLOCK_ROWS), dim},
+                          sycl::range<2>{BLOCK_ROWS, TILE_DIM}},
+        [=](sycl::nd_item<2> it) {
+          const size_t x =
+              it.get_group().get_id(1) * TILE_DIM + it.get_local_id(1);
+          const size_t y =
+              it.get_group().get_id(0) * TILE_DIM + it.get_local_id(0);
 
-          for (size_t c = 0; c < r; c++) {
-            size_t src = r * dim + c;
-            size_t dst = c * dim + r;
+          const size_t width = it.get_group().get_group_range(1) * TILE_DIM;
 
-            uint64_t src_v = *(vec + src);
-            uint64_t dst_v = *(vec + dst);
+          if (it.get_group().get_id(0) > it.get_group().get_id(1)) {
+            size_t dx =
+                it.get_group().get_id(0) * TILE_DIM + it.get_local_id(1);
+            size_t dy =
+                it.get_group().get_id(1) * TILE_DIM + it.get_local_id(0);
 
-            src_v ^= dst_v;
-            dst_v ^= src_v;
-            src_v ^= dst_v;
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_s[it.get_local_id(0) + j][it.get_local_id(1)] =
+                  *(data + (y + j) * width + x);
+            }
 
-            *(vec + src) = src_v;
-            *(vec + dst) = dst_v;
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_d[it.get_local_id(0) + j][it.get_local_id(1)] =
+                  *(data + (dy + j) * width + dx);
+            }
+
+            it.barrier(sycl::access::fence_space::local_space);
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (dy + j) * width + dx) =
+                  tile_s[it.get_local_id(1)][it.get_local_id(0) + j];
+            }
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (y + j) * width + x) =
+                  tile_d[it.get_local_id(1)][it.get_local_id(0) + j];
+            }
+          } else if (it.get_group().get_id(0) == it.get_group().get_id(1)) {
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_s[it.get_local_id(0) + j][it.get_local_id(1)] =
+                  *(data + (y + j) * width + x);
+            }
+
+            it.barrier(sycl::access::fence_space::local_space);
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (y + j) * width + x) =
+                  tile_s[it.get_local_id(1)][it.get_local_id(0) + j];
+            }
           }
         });
   });
@@ -590,14 +630,14 @@ void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
                                              wg_size, {evt_0, evt_4});
 
   // Step 4: Transpose Matrix
-  sycl::event evt_6 = matrix_transpose(q, vec_, n, wg_size, {evt_5});
+  sycl::event evt_6 = matrix_transpose(q, vec_, n, {evt_5});
 
   // Step 5: n1-many parallel n2-point Cooley-Tukey FFT
   sycl::event evt_7 =
       row_wise_transform(q, vec_, omega_n2, n1, n2, n, wg_size, {evt_2, evt_6});
 
   // Step 6: Transpose Matrix
-  sycl::event evt_8 = matrix_transpose(q, vec_, n, wg_size, {evt_7});
+  sycl::event evt_8 = matrix_transpose(q, vec_, n, {evt_7});
 
   // copy result back to source matrix
   sycl::event evt_9 = q.submit([&](sycl::handler &h) {
@@ -669,14 +709,14 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
                                              wg_size, {evt_5, evt_0});
 
   // Step 4: Transpose Matrix
-  sycl::event evt_7 = matrix_transpose(q, vec_, n, wg_size, {evt_6});
+  sycl::event evt_7 = matrix_transpose(q, vec_, n, {evt_6});
 
   // Step 5: n1-many parallel n2-point Cooley-Tukey IFFT
   sycl::event evt_8 = row_wise_transform(q, vec_, omega_n2_inv, n1, n2, n,
                                          wg_size, {evt_2, evt_7});
 
   // Step 6: Transpose Matrix
-  sycl::event evt_9 = matrix_transpose(q, vec_, n, wg_size, {evt_8});
+  sycl::event evt_9 = matrix_transpose(q, vec_, n, {evt_8});
 
   // copy result back to source matrix, while
   // also multiplying by inverse of domain size
