@@ -105,7 +105,7 @@ int64_t benchmark_matrix_transposition(sycl::queue &q, const uint64_t dim,
   evt_0.wait();
 
   tp start = std::chrono::steady_clock::now();
-  matrix_transpose(q, vec_d, dim, wg_size, {}).wait();
+  matrix_transpose(q, vec_d, dim, {}).wait();
   tp end = std::chrono::steady_clock::now();
 
   sycl::free(vec_h, q);

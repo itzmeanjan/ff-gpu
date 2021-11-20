@@ -229,8 +229,8 @@ void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
   prepare_random_vector(vec_s, dim * dim);
   sycl::event evt_0 = q.memcpy(vec_d, vec_s, sizeof(uint64_t) * dim * dim);
 
-  sycl::event evt_1 = matrix_transpose(q, vec_d, dim, wg_size, {evt_0});
-  sycl::event evt_2 = matrix_transpose(q, vec_d, dim, wg_size, {evt_1});
+  sycl::event evt_1 = matrix_transpose(q, vec_d, dim, {evt_0});
+  sycl::event evt_2 = matrix_transpose(q, vec_d, dim, {evt_1});
 
   uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
   memset(mismatch, 0, sizeof(uint64_t));
