@@ -462,3 +462,57 @@ void test_six_step_ifft(sycl::queue &q, const uint64_t dim,
   std::free(vec_inv);
   sycl::free(vec_dev, q);
 }
+
+void test_six_step_fft_and_ifft(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_src =
+      static_cast<uint64_t *>(sycl::malloc_shared(sizeof(uint64_t) * dim, q));
+  uint64_t *vec_fwd =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
+  uint64_t *vec_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
+
+  prepare_random_vector(vec_src, dim);
+
+  q.memcpy(vec_fwd, vec_src, sizeof(uint64_t) * dim).wait();
+  six_step_fft(q, vec_fwd, dim, wg_size);
+
+  q.memcpy(vec_inv, vec_fwd, sizeof(uint64_t) * dim).wait();
+  six_step_ifft(q, vec_inv, dim, wg_size);
+
+  uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+  memset(mismatch, 0, sizeof(uint64_t));
+  {
+    buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+    q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.parallel_for<class kernelCompareSSAFFTAndIFFT>(
+          sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+          [=](sycl::nd_item<1> it) {
+            const size_t r = it.get_global_id(0);
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add(
+                *(vec_inv + r) % MOD == *(vec_src + r) % MOD ? 0 : 1);
+          });
+    });
+    q.wait();
+  }
+
+  assert(*mismatch == 0);
+  std::free(mismatch);
+
+  sycl::free(vec_src, q);
+  sycl::free(vec_fwd, q);
+  sycl::free(vec_inv, q);
+}
