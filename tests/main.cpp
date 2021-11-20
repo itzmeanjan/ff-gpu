@@ -55,7 +55,8 @@ int main(int argc, char **argv) {
 
   test_six_step_fft_and_ifft(q, 1 << 20, 1 << 8);
   test_six_step_fft_and_ifft(q, 1 << 21, 1 << 8);
-  std::cout << "✅ passed six step (I)FFT cycle test [rect/ square]" << std::endl;
+  std::cout << "✅ passed six step (I)FFT cycle test [rect/ square]"
+            << std::endl;
 
   return 0;
 }
