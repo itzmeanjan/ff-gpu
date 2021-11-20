@@ -68,23 +68,26 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
 
 // Computes in-place parallel *square* matrix transposition
 //
-// @note if matrix is not square, consider padding empty rows,
+// If matrix is not square, consider padding empty rows,
 // as it's easy to do in row-major indexing
 //
-// @note matrix is represented as 1d array
+// Matrix is represented as 1d array
 sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
                              const uint64_t wg_size,
                              std::vector<sycl::event> evts);
 
-// Performs parallel in-place FFT based on Cooley-Tukey style while taking USM
-// based memory pointer as input data location
-//
-// @note For kernel execution ordering consider using events vector parameter
-// and return event type properly, otherwise it'll result into data race, as
-// dependency needs to be managed manually due to no use of SYCL buffers
-sycl::event row_fft(sycl::queue &q, uint64_t *vec, uint64_t *omega,
-                    const uint64_t dim, const uint64_t wg_size,
-                    std::vector<sycl::event> evts);
+/* Performs parallel in-place (I)FFT based on Cooley-Tukey style while taking
+ USM based memory pointer as input data location.
+
+ Whether FFT/ IFFT to be performed, it depends on provided `omega`.
+
+ For kernel execution ordering, consider using events vector parameter
+ and return event type properly, otherwise it'll result into data race, as
+ dependency needs to be managed manually as I'm not using SYCL buffers
+*/
+sycl::event row_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
+                          const uint64_t dim, const uint64_t wg_size,
+                          std::vector<sycl::event> evts);
 
 // Multiplies powers of ω ( n-th root of unity ) to each element
 // of vector, which is here being interpreted as matrix of
@@ -98,7 +101,7 @@ sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
                                    const uint64_t wg_size,
                                    std::vector<sycl::event> evts);
 
-// Six step FFT algorithm based NTT implementation, which I've 
+// Six step FFT algorithm based NTT implementation, which I've
 // adapted from https://doi.org/10.1109/FPT.2013.6718406
 //
 // @note Returns forward transform result in same input vector
@@ -106,8 +109,8 @@ sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
 void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
                   const uint64_t wg_size);
 
-// Six step FFT algorithm based Inverse NTT implementation, which I've 
-// adapted from https://doi.org/10.1109/FPT.2013.6718406 and 
+// Six step FFT algorithm based Inverse NTT implementation, which I've
+// adapted from https://doi.org/10.1109/FPT.2013.6718406 and
 // https://github.com/itzmeanjan/ff-gpu/blob/4d1cedb6ce5144382622632d7809d986543a95a0/reference/ntt.py#L154-L223
 //
 // @note Returns inverse transform result in same input vector

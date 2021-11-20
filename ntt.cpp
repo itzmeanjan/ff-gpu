@@ -418,9 +418,9 @@ sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   });
 }
 
-sycl::event row_fft(sycl::queue &q, uint64_t *vec, uint64_t *omega,
-                    const uint64_t dim, const uint64_t wg_size,
-                    std::vector<sycl::event> evts) {
+sycl::event row_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
+                          const uint64_t dim, const uint64_t wg_size,
+                          std::vector<sycl::event> evts) {
   uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
 
   std::vector<sycl::event> _evts;
@@ -559,7 +559,7 @@ void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   // Step 2: n2-many parallel n1-point Cooley-Tukey style FFT
   for (uint64_t i = 0; i < n2; i++) {
     sycl::event evt =
-        row_fft(q, vec_ + i * n, omega_n1, n1, wg_size, {evt_1, evt_4});
+        row_transform(q, vec_ + i * n, omega_n1, n1, wg_size, {evt_1, evt_4});
     evts.push_back(evt);
   }
 
@@ -576,7 +576,7 @@ void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
   // Step 5: n1-many parallel n2-point Cooley-Tukey FFT
   for (uint64_t i = 0; i < n1; i++) {
     sycl::event evt =
-        row_fft(q, vec_ + i * n, omega_n2, n2, wg_size, {evt_2, evt_6});
+        row_transform(q, vec_ + i * n, omega_n2, n2, wg_size, {evt_2, evt_6});
     evts.push_back(evt);
   }
 
@@ -644,8 +644,8 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
 
   // Step 2: n2-many parallel n1-point Cooley-Tukey style IFFT
   for (uint64_t i = 0; i < n2; i++) {
-    sycl::event evt =
-        row_fft(q, vec_ + i * n, omega_n1_inv, n1, wg_size, {evt_1, evt_4});
+    sycl::event evt = row_transform(q, vec_ + i * n, omega_n1_inv, n1, wg_size,
+                                    {evt_1, evt_4});
     evts.push_back(evt);
   }
 
@@ -661,8 +661,8 @@ void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
 
   // Step 5: n1-many parallel n2-point Cooley-Tukey IFFT
   for (uint64_t i = 0; i < n1; i++) {
-    sycl::event evt =
-        row_fft(q, vec_ + i * n, omega_n2_inv, n2, wg_size, {evt_2, evt_6});
+    sycl::event evt = row_transform(q, vec_ + i * n, omega_n2_inv, n2, wg_size,
+                                    {evt_2, evt_6});
     evts.push_back(evt);
   }
 
