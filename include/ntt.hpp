@@ -79,21 +79,8 @@ sycl::event matrix_transpose(sycl::queue &q, uint64_t *vec, const uint64_t dim,
 /* Performs parallel in-place (I)FFT based on Cooley-Tukey style while taking
  USM based memory pointer as input data location.
 
- Whether FFT/ IFFT to be performed, it depends on provided `omega`.
-
- For kernel execution ordering, consider using events vector parameter
- and return event type properly, otherwise it'll result into data race, as
- dependency needs to be managed manually as I'm not using SYCL buffers
-*/
-sycl::event row_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
-                          const uint64_t dim, const uint64_t wg_size,
-                          std::vector<sycl::event> evts);
-
-/* Performs parallel in-place (I)FFT based on Cooley-Tukey style while taking
- USM based memory pointer as input data location.
-
- It works in 2D execution space of dimension `rows x cols`, with along x-axis width
- of matrix at max `width`, which may be == cols || == 2 * cols.
+ It works in 2D execution space of dimension `rows x cols`, with along x-axis
+ width of matrix at max `width`, which may be == cols || == 2 * cols.
 
  In simple terms it performs, `rows`-many `cols`-point (I)FFT, in parallel.
 
