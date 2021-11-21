@@ -586,7 +586,7 @@ sycl::event compute_twiddles(sycl::queue &q, uint64_t *twiddles,
 }
 
 sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
-                                   uint64_t *omega, const uint64_t rows,
+                                   uint64_t *twiddles, const uint64_t rows,
                                    const uint64_t cols, const uint64_t width,
                                    const uint64_t wg_size,
                                    std::vector<sycl::event> evts) {
@@ -600,12 +600,12 @@ sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
         [=](sycl::nd_item<2> it) {
           sycl::sub_group sg = it.get_sub_group();
 
-          const size_t r = it.get_global_id(0);
-          const size_t c = it.get_global_id(1);
+          const uint64_t r = it.get_global_id(0);
+          const uint64_t c = it.get_global_id(1);
 
-          *(vec + r * width + c) =
-              ff_p_mult(*(vec + r * width + c),
-                        ff_p_pow(sycl::group_broadcast(sg, *omega), r * c));
+          *(vec + r * width + c) = ff_p_mult(
+              *(vec + r * width + c),
+              ff_p_pow(sycl::group_broadcast(sg, *(twiddles + r)), c));
         });
   });
 }

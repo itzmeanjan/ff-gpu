@@ -117,8 +117,13 @@ sycl::event compute_twiddles(sycl::queue &q, uint64_t *twiddles,
 // 2 * N1 == width. That's why during pointer arithmetic
 // memory address linearization is performed using
 // `width` to be column count of matrix ( which is actually `vec` i.e. domain )
+//
+// This function expects to receive one pointer to vector which stores
+// powers of ω upto degree `rows` ( = N2 ), which are reused when computing
+// final twiddle factor exponentiation ( along x-axis/ column identifier ) &
+// multiplication
 sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
-                                   uint64_t *omega, const uint64_t rows,
+                                   uint64_t *twiddles, const uint64_t rows,
                                    const uint64_t cols, const uint64_t width,
                                    const uint64_t wg_size,
                                    std::vector<sycl::event> evts);
