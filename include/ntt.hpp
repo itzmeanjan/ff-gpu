@@ -104,6 +104,13 @@ sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
                                const uint64_t width, const uint64_t wg_size,
                                std::vector<sycl::event> evts);
 
+// Computes powers of ω, which is n-th root of unity, if `n` is NTT
+// domain size, such as {ω^0, ω^1, ω^2, ..., ω^(dim-1)}
+sycl::event compute_twiddles(sycl::queue &q, uint64_t *twiddles,
+                             uint64_t *omega, const uint64_t dim,
+                             const uint64_t wg_size,
+                             std::vector<sycl::event> evts);
+
 // Multiplies powers of ω ( n-th root of unity ) to each element
 // of vector, which is here being interpreted as matrix of
 // dimension N2 x N1, where N1 == width ( check function param ) or
