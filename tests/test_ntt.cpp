@@ -266,6 +266,62 @@ void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
   sycl::free(vec_s, q);
 }
 
+void test_compute_twiddles(sycl::queue &q, const uint64_t dim,
+                           const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  uint64_t n1 = 1 << (log_2_dim / 2);
+  uint64_t n2 = dim / n1;
+
+  assert(n1 == n2 || n2 == 2 * n1);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
+  uint64_t *omega =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+
+  sycl::event evt_0 =
+      q.single_task([=]() { *omega = get_root_of_unity(log_2_dim); });
+  sycl::event evt_1 =
+      compute_twiddles(q, twiddles, omega, n2, wg_size, {evt_0});
+
+  uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+  memset(mismatch, 0, sizeof(uint64_t));
+
+  {
+    buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+    sycl::event evt_3 = q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.depends_on(evt_1);
+      h.parallel_for(
+          sycl::nd_range<1>{sycl::range<1>{n2}, sycl::range<1>{wg_size}},
+          [=](sycl::nd_item<1> it) {
+            const size_t l_idx = it.get_global_linear_id();
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add(
+                *(twiddles + l_idx) % MOD == ff_p_pow(*omega, l_idx) % MOD ? 0
+                                                                           : 1);
+          });
+    });
+    evt_3.wait();
+  }
+
+  assert(*mismatch == 0);
+  std::free(mismatch);
+
+  sycl::free(twiddles, q);
+  sycl::free(omega, q);
+}
+
 void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
                                         const uint64_t n2,
                                         const uint64_t wg_size) {
