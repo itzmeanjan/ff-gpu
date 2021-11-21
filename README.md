@@ -47,8 +47,17 @@ InstalledDir: /opt/intel/oneapi/compiler/2021.3.0/linux/bin
 - Compile, link & run
 
 ```bash
-make # JIT kernel compilation, for AOT read below
+make # JIT kernel compilation on *default* device, for AOT read below
 ./run
+```
+
+- But you may be interested in targeting specific device, if you've multiple
+devices to choose from in runtime. Specify target device (which is to be used in runtime) during compilation phase using
+
+```bash
+DEVICE=cpu make   # still JIT, but in runtime use CPU
+DEVICE=gpu make   # still JIT, but in runtime use GPU
+DEVICE=host make  # still JIT, but in runtime use HOST
 ```
 
 - Clean using
@@ -74,13 +83,13 @@ lscpu | grep -i avx
 - AOT Compilation targeting CPU can be invoked using
 
 ```bash
-make aot_cpu
+DEVICE=cpu make aot_cpu
 ```
 
 - I also provide recipe for AOT compiling kernels targeting Intel Iris Xe Max Graphics
 
 ```bash
-make aot_gpu
+DEVICE=gpu make aot_gpu
 ```
 
 > You may have some other hardware, consider taking a look at AOT compilation [guidelines](https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-compiler-dev-guide-and-reference/top/compilation/ahead-of-time-compilation.html) & make necessary changes in `Makefile`.
@@ -101,7 +110,9 @@ I run benchmarking code on both **CPU** and **GPGPU**, keeping results 👇
 You can run basic test cases using
 
 ```bash
-make test
+# set variable to runtime target device
+
+DEVICE=cpu|gpu|host make test 
 ```
 
 There's another set of randomised test cases, which asserts results *( obtained from my prime field implementation )* with another finite field implementation module, written in `Python`, named `galois`.
@@ -109,7 +120,9 @@ There's another set of randomised test cases, which asserts results *( obtained 
 For running those, I suggest you first compile shared object using
 
 ```bash
-make genlib
+# set variable to runtime target device
+
+DEVICE=cpu|gpu|host make genlib
 ```
 
 After that you can follow next steps [here](wrapper/python).
