@@ -358,7 +358,7 @@ void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
 
   sycl::event evt_1 = q.submit([&](sycl::handler &h) {
     h.single_task([=]() {
-      *omega = get_root_of_unity((uint64_t)sycl::log2((float)n1 * n2));
+      *omega = get_root_of_unity((uint64_t)sycl::log2((float)(n1 * n2)));
     });
   });
 
