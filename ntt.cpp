@@ -394,6 +394,8 @@ sycl::event matrix_transpose(sycl::queue &q, uint64_t *data, const uint64_t dim,
   constexpr size_t TILE_DIM = 1 << 5;
   constexpr size_t BLOCK_ROWS = 1 << 3;
 
+  assert(TILE_DIM >= BLOCK_ROWS);
+
   return q.submit([&](sycl::handler &h) {
     sycl::accessor<uint64_t, 2, sycl::access_mode::read_write,
                    sycl::target::local>
@@ -407,51 +409,56 @@ sycl::event matrix_transpose(sycl::queue &q, uint64_t *data, const uint64_t dim,
         sycl::nd_range<2>{sycl::range<2>{dim / (TILE_DIM / BLOCK_ROWS), dim},
                           sycl::range<2>{BLOCK_ROWS, TILE_DIM}},
         [=](sycl::nd_item<2> it) {
-          const size_t x =
-              it.get_group().get_id(1) * TILE_DIM + it.get_local_id(1);
-          const size_t y =
-              it.get_group().get_id(0) * TILE_DIM + it.get_local_id(0);
+          const size_t grp_id_x = it.get_group().get_id(1);
+          const size_t grp_id_y = it.get_group().get_id(0);
+          const size_t loc_id_x = it.get_local_id(1);
+          const size_t loc_id_y = it.get_local_id(0);
+          const size_t grp_width_x = it.get_group().get_group_range(1);
 
-          const size_t width = it.get_group().get_group_range(1) * TILE_DIM;
+          // @note x denotes index along x-axis
+          // while y denotes index along y-axis
+          //
+          // so in usual (row, col) indexing of 2D array
+          // row = y, col = x
+          const size_t x = grp_id_x * TILE_DIM + loc_id_x;
+          const size_t y = grp_id_y * TILE_DIM + loc_id_y;
 
-          if (it.get_group().get_id(0) > it.get_group().get_id(1)) {
-            size_t dx =
-                it.get_group().get_id(0) * TILE_DIM + it.get_local_id(1);
-            size_t dy =
-                it.get_group().get_id(1) * TILE_DIM + it.get_local_id(0);
+          const size_t width = grp_width_x * TILE_DIM;
+
+          if (grp_id_y > grp_id_x) {
+            size_t dx = grp_id_y * TILE_DIM + loc_id_x;
+            size_t dy = grp_id_x * TILE_DIM + loc_id_y;
 
             for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
-              tile_s[it.get_local_id(0) + j][it.get_local_id(1)] =
-                  *(data + (y + j) * width + x);
+              tile_s[loc_id_y + j][loc_id_x] = *(data + (y + j) * width + x);
             }
 
             for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
-              tile_d[it.get_local_id(0) + j][it.get_local_id(1)] =
-                  *(data + (dy + j) * width + dx);
-            }
-
-            it.barrier(sycl::access::fence_space::local_space);
-
-            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
-              *(data + (dy + j) * width + dx) =
-                  tile_s[it.get_local_id(1)][it.get_local_id(0) + j];
-            }
-
-            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
-              *(data + (y + j) * width + x) =
-                  tile_d[it.get_local_id(1)][it.get_local_id(0) + j];
-            }
-          } else if (it.get_group().get_id(0) == it.get_group().get_id(1)) {
-            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
-              tile_s[it.get_local_id(0) + j][it.get_local_id(1)] =
-                  *(data + (y + j) * width + x);
+              tile_d[loc_id_y + j][loc_id_x] = *(data + (dy + j) * width + dx);
             }
 
             it.barrier(sycl::access::fence_space::local_space);
 
             for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
-              *(data + (y + j) * width + x) =
-                  tile_s[it.get_local_id(1)][it.get_local_id(0) + j];
+              *(data + (dy + j) * width + dx) = tile_s[loc_id_x][loc_id_y + j];
+            }
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (y + j) * width + x) = tile_d[loc_id_x][loc_id_y + j];
+            }
+
+            return;
+          }
+
+          if (grp_id_y == grp_id_x) {
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_s[loc_id_y + j][loc_id_x] = *(data + (y + j) * width + x);
+            }
+
+            it.barrier(sycl::access::fence_space::local_space);
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (y + j) * width + x) = tile_s[loc_id_x][loc_id_y + j];
             }
           }
         });
