@@ -10,7 +10,22 @@ const uint32_t N = 1 << 10;
 const uint32_t B = 1 << 7;
 
 int main(int argc, char **argv) {
+// device selection is based on flag provided to compiler
+// such as `clang++ main.cpp {...}.cpp -D{CPU,GPU,HOST,DEFAULT} -fsycl
+// -std=c++20 -Wall`
+//
+// but someone using make utility, should be invoking it as
+// `DEVICE=cpu|gpu|host make <target>`
+#if defined CPU
+  device d{cpu_selector{}};
+#elif defined GPU
+  device d{gpu_selector{}};
+#elif defined HOST
+  device d{host_selector{}};
+#else
   device d{default_selector{}};
+#endif
+
   queue q{d};
 
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
