@@ -334,6 +334,8 @@ void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n * n, q));
   uint64_t *omega =
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
 
   // first initialise all cells with zero
   q.memset(vec_s, 0, sizeof(uint64_t) * n * n).wait();
@@ -360,8 +362,11 @@ void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
     });
   });
 
-  sycl::event evt_2 = twiddle_multiplication(q, vec_d, omega, n2, n1, n,
-                                             wg_size, {evt_0, evt_1});
+  sycl::event evt_2 =
+      compute_twiddles(q, twiddles, omega, n2, wg_size, {evt_1});
+
+  sycl::event evt_3 = twiddle_multiplication(q, vec_d, twiddles, n2, n1, n,
+                                             wg_size, {evt_0, evt_2});
 
   uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
   memset(mismatch, 0, sizeof(uint64_t));
@@ -369,10 +374,10 @@ void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
   {
     buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
 
-    sycl::event evt_3 = q.submit([&](sycl::handler &h) {
+    sycl::event evt_4 = q.submit([&](sycl::handler &h) {
       buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
 
-      h.depends_on({evt_2});
+      h.depends_on({evt_3});
       h.parallel_for(
           sycl::nd_range<2>{sycl::range<2>{n, n}, sycl::range<2>{1, wg_size}},
           [=](sycl::nd_item<2> it) {
