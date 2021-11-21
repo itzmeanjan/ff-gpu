@@ -5,7 +5,15 @@
 using namespace sycl;
 
 int main(int argc, char **argv) {
+#if defined CPU
+  device d{cpu_selector{}};
+#elif defined GPU
+  device d{gpu_selector{}};
+#elif defined HOST
+  device d{host_selector{}};
+#else
   device d{default_selector{}};
+#endif
   queue q{d};
 
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
@@ -39,6 +47,9 @@ int main(int argc, char **argv) {
 
   check_matrix_transposition(q, 1 << 10, 1 << 6);
   std::cout << "✅ passed square matrix transposition test" << std::endl;
+
+  test_compute_twiddles(q, 1 << 23, 1 << 8);
+  std::cout << "✅ passed twiddle factor computation test" << std::endl;
 
   test_twiddle_factor_multiplication(q, 1 << 10, 1 << 10, 1 << 6);
   test_twiddle_factor_multiplication(q, 1 << 10, 1 << 11, 1 << 6);
