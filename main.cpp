@@ -338,9 +338,9 @@ int main(int argc, char **argv) {
             << "\t\t" << std::setw(20) << "avg"
             << "\t\t" << std::setw(20) << "op/s" << std::endl;
 
-  for (uint dim = B; dim <= N; dim <<= 1) {
+  for (uint dim = B; dim <= (1ul << 12); dim <<= 1) {
     tp start = std::chrono::steady_clock::now();
-    benchmark_hash_elements(q, dim, B, N);
+    benchmark_hash_elements(q, dim, 1ul << 6, N);
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
