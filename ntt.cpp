@@ -225,6 +225,8 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   uint64_t *omega = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
 
   {
+    constexpr uint64_t SUBGROUP_SIZE = 1ul << 5;
+
     buf_1d_u64_t buf_omega{omega, sycl::range<1>{1}};
     buf_omega.set_write_back(false);
 
@@ -242,28 +244,54 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
         buf_1d_u64_rd_t acc_omega{buf_omega, h};
         buf_1d_u64_rw_t acc_res{res, h};
 
-        h.parallel_for<class kernelCooleyTukeyFFTMain>(
-            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
-            [=](sycl::nd_item<1> it) {
-              sycl::sub_group sg = it.get_sub_group();
+        if ((1ul << i) >= SUBGROUP_SIZE) {
+          h.parallel_for<class kernelCooleyTukeyFFTMain>(
+              sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+              [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
+                sycl::sub_group sg = it.get_sub_group();
 
-              const uint64_t k = it.get_global_id(0);
-              const uint64_t p = 1ul << i;
-              const uint64_t q = dim / p;
+                const uint64_t k = it.get_global_id(0);
+                const uint64_t p = 1ul << i;
+                const uint64_t q = dim / p;
 
-              uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-              uint64_t ω =
-                  ff_p_pow(sycl::group_broadcast(sg, acc_omega[0]), p * k_rev);
+                uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+                uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, acc_omega[0]),
+                                      p * k_rev);
 
-              if (k % p == k % (2 * p)) {
+                if (k < (k ^ p)) {
+                  uint64_t tmp_k = acc_res[k];
+                  uint64_t tmp_k_p = acc_res[k ^ p];
+                  uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+
+                  acc_res[k] = ff_p_add(tmp_k, tmp_k_p_ω);
+                  acc_res[k ^ p] = ff_p_sub(tmp_k, tmp_k_p_ω);
+                }
+              });
+        } else {
+          h.parallel_for<class kernelCooleyTukeyFFTSG>(
+              sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+              [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
+                sycl::sub_group sg = it.get_sub_group();
+
+                const uint64_t k = it.get_global_id(0);
+                const uint64_t p = 1ul << i; // mask for subgroup shuffle_xor
+                const uint64_t q = dim / p;
+
+                uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+                uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, acc_omega[0]),
+                                      p * k_rev);
+
                 uint64_t tmp_k = acc_res[k];
-                uint64_t tmp_k_p = acc_res[k + p];
-                uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+                // obtain value with work-item index (k ^ p)
+                uint64_t tmp_k_p = sg.shuffle_xor(tmp_k, p);
+                // obtain ω of work-item with index (k ^ p)
+                uint64_t ω_ = sg.shuffle_xor(ω, p);
 
-                acc_res[k] = ff_p_add(tmp_k, tmp_k_p_ω);
-                acc_res[k + p] = ff_p_sub(tmp_k, tmp_k_p_ω);
-              }
-            });
+                acc_res[k] = k < (k ^ p)
+                                 ? ff_p_add(tmp_k, ff_p_mult(tmp_k_p, ω))
+                                 : ff_p_sub(tmp_k_p, ff_p_mult(tmp_k, ω_));
+              });
+        }
       });
     }
 
@@ -304,6 +332,8 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   uint64_t *dim_inv = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
 
   {
+    constexpr uint64_t SUBGROUP_SIZE = 1ul << 5;
+
     buf_1d_u64_t buf_omega_inv{omega_inv, sycl::range<1>{1}};
     buf_1d_u64_t buf_dim_inv{dim_inv, sycl::range<1>{1}};
 
@@ -330,28 +360,54 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
         buf_1d_u64_rd_t acc_omega_inv{buf_omega_inv, h};
         buf_1d_u64_rw_t acc_res{res, h};
 
-        h.parallel_for<class kernelCooleyTukeyIFFTMain>(
-            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
-            [=](sycl::nd_item<1> it) {
-              sycl::sub_group sg = it.get_sub_group();
+        if ((1ul << i) >= SUBGROUP_SIZE) {
+          h.parallel_for<class kernelCooleyTukeyIFFTMain>(
+              sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+              [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
+                sycl::sub_group sg = it.get_sub_group();
 
-              const uint64_t k = it.get_global_id(0);
-              const uint64_t p = 1ul << i;
-              const uint64_t q = dim / p;
+                const uint64_t k = it.get_global_id(0);
+                const uint64_t p = 1ul << i;
+                const uint64_t q = dim / p;
 
-              uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-              uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, acc_omega_inv[0]),
-                                    p * k_rev);
+                uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+                uint64_t ω = ff_p_pow(
+                    sycl::group_broadcast(sg, acc_omega_inv[0]), p * k_rev);
 
-              if (k % p == k % (2 * p)) {
+                if (k < (k ^ p)) {
+                  uint64_t tmp_k = acc_res[k];
+                  uint64_t tmp_k_p = acc_res[k ^ p];
+                  uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+
+                  acc_res[k] = ff_p_add(tmp_k, tmp_k_p_ω);
+                  acc_res[k ^ p] = ff_p_sub(tmp_k, tmp_k_p_ω);
+                }
+              });
+        } else {
+          h.parallel_for<class kernelCooleyTukeyIFFTSG>(
+              sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+              [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
+                sycl::sub_group sg = it.get_sub_group();
+
+                const uint64_t k = it.get_global_id(0);
+                const uint64_t p = 1ul << i; // mask for subgroup shuffle_xor
+                const uint64_t q = dim / p;
+
+                uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+                uint64_t ω = ff_p_pow(
+                    sycl::group_broadcast(sg, acc_omega_inv[0]), p * k_rev);
+
                 uint64_t tmp_k = acc_res[k];
-                uint64_t tmp_k_p = acc_res[k + p];
-                uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+                // obtain value with work-item index (k ^ p)
+                uint64_t tmp_k_p = sg.shuffle_xor(tmp_k, p);
+                // obtain ω of work-item with index (k ^ p)
+                uint64_t ω_ = sg.shuffle_xor(ω, p);
 
-                acc_res[k] = ff_p_add(tmp_k, tmp_k_p_ω);
-                acc_res[k + p] = ff_p_sub(tmp_k, tmp_k_p_ω);
-              }
-            });
+                acc_res[k] = k < (k ^ p)
+                                 ? ff_p_add(tmp_k, ff_p_mult(tmp_k_p, ω))
+                                 : ff_p_sub(tmp_k_p, ff_p_mult(tmp_k, ω_));
+              });
+        }
       });
     }
 
