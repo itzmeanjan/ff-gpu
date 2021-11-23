@@ -388,3 +388,394 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   std::free(omega_inv);
   std::free(dim_inv);
 }
+
+sycl::event matrix_transpose(sycl::queue &q, uint64_t *data, const uint64_t dim,
+                             std::vector<sycl::event> evts) {
+  constexpr size_t TILE_DIM = 1 << 5;
+  constexpr size_t BLOCK_ROWS = 1 << 3;
+
+  assert(TILE_DIM >= BLOCK_ROWS);
+
+  return q.submit([&](sycl::handler &h) {
+    sycl::accessor<uint64_t, 2, sycl::access_mode::read_write,
+                   sycl::target::local>
+        tile_s{sycl::range<2>{TILE_DIM, TILE_DIM + 1}, h};
+    sycl::accessor<uint64_t, 2, sycl::access_mode::read_write,
+                   sycl::target::local>
+        tile_d{sycl::range<2>{TILE_DIM, TILE_DIM + 1}, h};
+
+    h.depends_on(evts);
+    h.parallel_for<class kernelMatrixTransposition>(
+        sycl::nd_range<2>{sycl::range<2>{dim / (TILE_DIM / BLOCK_ROWS), dim},
+                          sycl::range<2>{BLOCK_ROWS, TILE_DIM}},
+        [=](sycl::nd_item<2> it) {
+          const size_t grp_id_x = it.get_group().get_id(1);
+          const size_t grp_id_y = it.get_group().get_id(0);
+          const size_t loc_id_x = it.get_local_id(1);
+          const size_t loc_id_y = it.get_local_id(0);
+          const size_t grp_width_x = it.get_group().get_group_range(1);
+
+          // @note x denotes index along x-axis
+          // while y denotes index along y-axis
+          //
+          // so in usual (row, col) indexing of 2D array
+          // row = y, col = x
+          const size_t x = grp_id_x * TILE_DIM + loc_id_x;
+          const size_t y = grp_id_y * TILE_DIM + loc_id_y;
+
+          const size_t width = grp_width_x * TILE_DIM;
+
+          if (grp_id_y > grp_id_x) {
+            size_t dx = grp_id_y * TILE_DIM + loc_id_x;
+            size_t dy = grp_id_x * TILE_DIM + loc_id_y;
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_s[loc_id_y + j][loc_id_x] = *(data + (y + j) * width + x);
+            }
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_d[loc_id_y + j][loc_id_x] = *(data + (dy + j) * width + dx);
+            }
+
+            it.barrier(sycl::access::fence_space::local_space);
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (dy + j) * width + dx) = tile_s[loc_id_x][loc_id_y + j];
+            }
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (y + j) * width + x) = tile_d[loc_id_x][loc_id_y + j];
+            }
+
+            return;
+          }
+
+          if (grp_id_y == grp_id_x) {
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              tile_s[loc_id_y + j][loc_id_x] = *(data + (y + j) * width + x);
+            }
+
+            it.barrier(sycl::access::fence_space::local_space);
+
+            for (size_t j = 0; j < TILE_DIM; j += BLOCK_ROWS) {
+              *(data + (y + j) * width + x) = tile_s[loc_id_x][loc_id_y + j];
+            }
+          }
+        });
+  });
+}
+
+sycl::event matrix_transposed_initialise(sycl::queue &q, uint64_t *vec_src,
+                                         uint64_t *vec_dst, const uint64_t rows,
+                                         const uint64_t cols,
+                                         const uint64_t width,
+                                         const uint64_t wg_size,
+                                         std::vector<sycl::event> evts) {
+  return q.submit([&](sycl::handler &h) {
+    h.depends_on(evts);
+
+    h.parallel_for<class kernelMatrixTransposedInitialise>(
+        sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                          sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          sycl::sub_group sg = it.get_sub_group();
+
+          const size_t r = it.get_global_id(0);
+          const size_t c = it.get_global_id(1);
+
+          // read into work-item's private memory, using
+          // subgroup collective function
+          const uint64_t width_ = sycl::group_broadcast(sg, width);
+
+          *(vec_dst + r * width_ + c) = *(vec_src + c * width_ + r);
+        });
+  });
+}
+
+sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
+                               const uint64_t rows, const uint64_t cols,
+                               const uint64_t width, const uint64_t wg_size,
+                               std::vector<sycl::event> evts) {
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)cols);
+
+  std::vector<sycl::event> _evts;
+  _evts.reserve(log_2_dim);
+
+  for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
+    sycl::event evt = q.submit([&](sycl::handler &h) {
+      if (i == log_2_dim - 1ul) {
+        // only first submission depends on
+        // previous kernel executions, whose events
+        // are passed as argument to this function
+        h.depends_on(evts);
+      } else {
+        // all next kernel submissions
+        // depend on just previous kernel submission
+        h.depends_on(_evts.at(log_2_dim - (i + 2)));
+      }
+
+      h.parallel_for<class kernelCooleyTukeyRowWiseFFT>(
+          sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                            sycl::range<2>{1, wg_size}},
+          [=](sycl::nd_item<2> it) {
+            sycl::sub_group sg = it.get_sub_group();
+
+            const uint64_t r = it.get_global_id(0);
+            const uint64_t k = it.get_global_id(1);
+            const uint64_t p = 1ul << i;
+            const uint64_t q = cols / p;
+
+            uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+            uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, *omega), p * k_rev);
+
+            if (k % p == k % (2 * p)) {
+              uint64_t tmp_k = *(vec + r * width + k);
+              uint64_t tmp_k_p = *(vec + r * width + k + p);
+              uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+
+              *(vec + r * width + k) = ff_p_add(tmp_k, tmp_k_p_ω);
+              *(vec + r * width + k + p) = ff_p_sub(tmp_k, tmp_k_p_ω);
+            }
+          });
+    });
+    _evts.push_back(evt);
+  }
+
+  return q.submit([&](sycl::handler &h) {
+    // final reordering kernel depends on very
+    // last kernel submission performed in above loop
+    h.depends_on(_evts.at(log_2_dim - 1));
+    h.parallel_for<class kernelCooleyTukeyRowWiseFFTFinalReorder>(
+        sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                          sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          const uint64_t r = it.get_global_id(0);
+          const uint64_t k = it.get_global_id(1);
+          const uint64_t k_perm = permute_index(k, cols);
+
+          if (k_perm > k) {
+            uint64_t a = *(vec + r * width + k);
+            uint64_t b = *(vec + r * width + k_perm);
+
+            a ^= b;
+            b ^= a;
+            a ^= b;
+
+            *(vec + r * width + k) = a;
+            *(vec + r * width + k_perm) = b;
+          }
+        });
+  });
+}
+
+sycl::event compute_twiddles(sycl::queue &q, uint64_t *twiddles,
+                             uint64_t *omega, const uint64_t dim,
+                             const uint64_t wg_size,
+                             std::vector<sycl::event> evts) {
+  return q.submit([&](sycl::handler &h) {
+    h.depends_on(evts);
+    h.parallel_for(
+        sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+        [=](sycl::nd_item<1> it) {
+          sycl::sub_group sg = it.get_sub_group();
+          const uint64_t c = it.get_global_id(0);
+
+          *(twiddles + c) = ff_p_pow(sycl::group_broadcast(sg, *omega), c);
+        });
+  });
+}
+
+sycl::event twiddle_multiplication(sycl::queue &q, uint64_t *vec,
+                                   uint64_t *twiddles, const uint64_t rows,
+                                   const uint64_t cols, const uint64_t width,
+                                   const uint64_t wg_size,
+                                   std::vector<sycl::event> evts) {
+  assert(cols == width || 2 * cols == width);
+
+  return q.submit([&](sycl::handler &h) {
+    h.depends_on(evts);
+    h.parallel_for<class kernelTwiddleFactorMultiplication>(
+        sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                          sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          sycl::sub_group sg = it.get_sub_group();
+
+          const uint64_t r = it.get_global_id(0);
+          const uint64_t c = it.get_global_id(1);
+
+          *(vec + r * width + c) = ff_p_mult(
+              *(vec + r * width + c),
+              ff_p_pow(sycl::group_broadcast(sg, *(twiddles + r)), c));
+        });
+  });
+}
+
+void six_step_fft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
+                  const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  uint64_t n1 = 1 << (log_2_dim / 2);
+  uint64_t n2 = dim / n1;
+  uint64_t n = sycl::max(n1, n2);
+  uint64_t log_2_n1 = (uint64_t)sycl::log2((float)n1);
+  uint64_t log_2_n2 = (uint64_t)sycl::log2((float)n2);
+
+  assert(n1 == n2 || n2 == 2 * n1);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_ =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n * n, q));
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
+  uint64_t *omega_dim =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_n1 =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_n2 =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+
+  // compute i-th root of unity, where n = {dim, n1, n2}
+  sycl::event evt_0 =
+      q.single_task([=]() { *omega_dim = get_root_of_unity(log_2_dim); });
+  sycl::event evt_1 =
+      q.single_task([=]() { *omega_n1 = get_root_of_unity(log_2_n1); });
+  sycl::event evt_2 =
+      q.single_task([=]() { *omega_n2 = get_root_of_unity(log_2_n2); });
+
+  // Step 1: Transpose Matrix
+  sycl::event evt_3 =
+      matrix_transposed_initialise(q, vec, vec_, n2, n1, n, wg_size, {});
+
+  // Step 2: n2-many parallel n1-point Cooley-Tukey style FFT
+  sycl::event evt_4 =
+      row_wise_transform(q, vec_, omega_n1, n2, n1, n, wg_size, {evt_1, evt_3});
+
+  // Step 3: Multiply by twiddle factors
+  sycl::event evt_5 =
+      compute_twiddles(q, twiddles, omega_dim, n2, wg_size, {evt_0});
+  sycl::event evt_6 = twiddle_multiplication(q, vec_, twiddles, n2, n1, n,
+                                             wg_size, {evt_4, evt_5});
+
+  // Step 4: Transpose Matrix
+  sycl::event evt_7 = matrix_transpose(q, vec_, n, {evt_6});
+
+  // Step 5: n1-many parallel n2-point Cooley-Tukey FFT
+  sycl::event evt_8 =
+      row_wise_transform(q, vec_, omega_n2, n1, n2, n, wg_size, {evt_2, evt_7});
+
+  // Step 6: Transpose Matrix
+  sycl::event evt_9 = matrix_transpose(q, vec_, n, {evt_8});
+
+  // copy result back to source matrix
+  sycl::event evt_10 = q.submit([&](sycl::handler &h) {
+    h.depends_on(evt_9);
+
+    h.parallel_for<class kernelFFTCopyBack>(
+        sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          const size_t r = it.get_global_id(0);
+          const size_t c = it.get_global_id(1);
+
+          *(vec + it.get_global_linear_id()) = *(vec_ + r * n + c);
+        });
+  });
+
+  evt_10.wait();
+
+  sycl::free(vec_, q);
+  sycl::free(twiddles, q);
+  sycl::free(omega_dim, q);
+  sycl::free(omega_n1, q);
+  sycl::free(omega_n2, q);
+}
+
+void six_step_ifft(sycl::queue &q, uint64_t *vec, const uint64_t dim,
+                   const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  uint64_t n1 = 1 << (log_2_dim / 2);
+  uint64_t n2 = dim / n1;
+  uint64_t n = sycl::max(n1, n2);
+  uint64_t log_2_n1 = (uint64_t)sycl::log2((float)n1);
+  uint64_t log_2_n2 = (uint64_t)sycl::log2((float)n2);
+
+  assert(n1 == n2 || n2 == 2 * n1);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_ =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n * n, q));
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
+  uint64_t *omega_dim_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_n1_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_n2_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *omega_domain_size_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+
+  // compute inverse of i-th root of unity, where n = {dim, n1, n2}
+  sycl::event evt_0 = q.single_task(
+      [=]() { *omega_dim_inv = ff_p_inv(get_root_of_unity(log_2_dim)); });
+  sycl::event evt_1 = q.single_task(
+      [=]() { *omega_n1_inv = ff_p_inv(get_root_of_unity(log_2_n1)); });
+  sycl::event evt_2 = q.single_task(
+      [=]() { *omega_n2_inv = ff_p_inv(get_root_of_unity(log_2_n2)); });
+  sycl::event evt_3 =
+      q.single_task([=]() { *omega_domain_size_inv = ff_p_inv(dim); });
+
+  // Step 1: Transpose Matrix
+  sycl::event evt_4 =
+      matrix_transposed_initialise(q, vec, vec_, n2, n1, n, wg_size, {});
+
+  // Step 2: n2-many parallel n1-point Cooley-Tukey style IFFT
+  sycl::event evt_5 = row_wise_transform(q, vec_, omega_n1_inv, n2, n1, n,
+                                         wg_size, {evt_1, evt_4});
+
+  // Step 3: Multiply by twiddle factors
+  sycl::event evt_6 =
+      compute_twiddles(q, twiddles, omega_dim_inv, n2, wg_size, {evt_0});
+  sycl::event evt_7 = twiddle_multiplication(q, vec_, twiddles, n2, n1, n,
+                                             wg_size, {evt_5, evt_6});
+
+  // Step 4: Transpose Matrix
+  sycl::event evt_8 = matrix_transpose(q, vec_, n, {evt_7});
+
+  // Step 5: n1-many parallel n2-point Cooley-Tukey IFFT
+  sycl::event evt_9 = row_wise_transform(q, vec_, omega_n2_inv, n1, n2, n,
+                                         wg_size, {evt_2, evt_8});
+
+  // Step 6: Transpose Matrix
+  sycl::event evt_10 = matrix_transpose(q, vec_, n, {evt_9});
+
+  // copy result back to source matrix, while
+  // also multiplying by inverse of domain size
+  sycl::event evt_11 = q.submit([&](sycl::handler &h) {
+    h.depends_on({evt_3, evt_10});
+
+    h.parallel_for<class kernelIFFTCopyBack>(
+        sycl::nd_range<2>{sycl::range<2>{n2, n1}, sycl::range<2>{1, wg_size}},
+        [=](sycl::nd_item<2> it) {
+          sycl::sub_group sg = it.get_sub_group();
+
+          const size_t r = it.get_global_id(0);
+          const size_t c = it.get_global_id(1);
+
+          *(vec + it.get_global_linear_id()) =
+              ff_p_mult(sycl::group_broadcast(sg, *omega_domain_size_inv),
+                        *(vec_ + r * n + c));
+        });
+  });
+
+  evt_11.wait();
+
+  sycl::free(vec_, q);
+  sycl::free(twiddles, q);
+  sycl::free(omega_dim_inv, q);
+  sycl::free(omega_n1_inv, q);
+  sycl::free(omega_n2_inv, q);
+  sycl::free(omega_domain_size_inv, q);
+}

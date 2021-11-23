@@ -218,3 +218,362 @@ void check_cooley_tukey_ntt(sycl::queue &q, const uint64_t dim,
   std::free(vec_fwd);
   std::free(vec_inv);
 }
+
+void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size) {
+  uint64_t *vec_d = static_cast<uint64_t *>(
+      sycl::malloc_device(sizeof(uint64_t) * dim * dim, q));
+  uint64_t *vec_s = static_cast<uint64_t *>(
+      sycl::malloc_shared(sizeof(uint64_t) * dim * dim, q));
+
+  prepare_random_vector(vec_s, dim * dim);
+  sycl::event evt_0 = q.memcpy(vec_d, vec_s, sizeof(uint64_t) * dim * dim);
+
+  sycl::event evt_1 = matrix_transpose(q, vec_d, dim, {evt_0});
+  sycl::event evt_2 = matrix_transpose(q, vec_d, dim, {evt_1});
+
+  uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+  memset(mismatch, 0, sizeof(uint64_t));
+
+  {
+    buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+    sycl::event evt_3 = q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.depends_on({evt_2});
+      h.parallel_for(sycl::nd_range<2>{sycl::range<2>{dim, dim},
+                                       sycl::range<2>{1, wg_size}},
+                     [=](sycl::nd_item<2> it) {
+                       const size_t l_idx = it.get_global_linear_id();
+
+                       sycl::ext::oneapi::atomic_ref<
+                           uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                           sycl::memory_scope::device,
+                           sycl::access::address_space::global_device_space>
+                           corr_ref{acc_mismatch[0]};
+                       corr_ref.fetch_add(
+                           *(vec_d + l_idx) == *(vec_s + l_idx) ? 0 : 1);
+                     });
+    });
+    evt_3.wait();
+  }
+
+  assert(*mismatch == 0);
+  std::free(mismatch);
+
+  sycl::free(vec_d, q);
+  sycl::free(vec_s, q);
+}
+
+void test_compute_twiddles(sycl::queue &q, const uint64_t dim,
+                           const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  uint64_t n1 = 1 << (log_2_dim / 2);
+  uint64_t n2 = dim / n1;
+
+  assert(n1 == n2 || n2 == 2 * n1);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
+  uint64_t *omega =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+
+  sycl::event evt_0 =
+      q.single_task([=]() { *omega = get_root_of_unity(log_2_dim); });
+  sycl::event evt_1 =
+      compute_twiddles(q, twiddles, omega, n2, wg_size, {evt_0});
+
+  uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+  memset(mismatch, 0, sizeof(uint64_t));
+
+  {
+    buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+    sycl::event evt_3 = q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.depends_on(evt_1);
+      h.parallel_for(
+          sycl::nd_range<1>{sycl::range<1>{n2}, sycl::range<1>{wg_size}},
+          [=](sycl::nd_item<1> it) {
+            const size_t l_idx = it.get_global_linear_id();
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add(
+                *(twiddles + l_idx) % MOD == ff_p_pow(*omega, l_idx) % MOD ? 0
+                                                                           : 1);
+          });
+    });
+    evt_3.wait();
+  }
+
+  assert(*mismatch == 0);
+  std::free(mismatch);
+
+  sycl::free(twiddles, q);
+  sycl::free(omega, q);
+}
+
+void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
+                                        const uint64_t n2,
+                                        const uint64_t wg_size) {
+  assert(n1 == n2 || n2 == 2 * n1);
+  uint64_t n = std::max(n1, n2);
+
+  uint64_t *vec_s =
+      static_cast<uint64_t *>(sycl::malloc_shared(sizeof(uint64_t) * n * n, q));
+  uint64_t *vec_d =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n * n, q));
+  uint64_t *omega =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
+
+  // first initialise all cells with zero
+  q.memset(vec_s, 0, sizeof(uint64_t) * n * n).wait();
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<uint64_t> dis(1ul, MOD);
+
+  // then randomly assign field elements to n2 x n1 many cells
+  for (uint64_t i = 0; i < n2; i++) {
+    for (uint64_t j = 0; j < n1; j++) {
+      *(vec_s + i * n + j) = dis(gen);
+    }
+  }
+
+  // finally copy all n x n elements to device allocated vector,
+  // some may be zeros ( not important cells, but still kept, just to ensure
+  // that matrix is of square shape ! )
+  sycl::event evt_0 = q.memcpy(vec_d, vec_s, sizeof(uint64_t) * n * n);
+
+  sycl::event evt_1 = q.submit([&](sycl::handler &h) {
+    h.single_task([=]() {
+      *omega = get_root_of_unity((uint64_t)sycl::log2((float)(n1 * n2)));
+    });
+  });
+
+  sycl::event evt_2 =
+      compute_twiddles(q, twiddles, omega, n2, wg_size, {evt_1});
+
+  sycl::event evt_3 = twiddle_multiplication(q, vec_d, twiddles, n2, n1, n,
+                                             wg_size, {evt_0, evt_2});
+
+  uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+  memset(mismatch, 0, sizeof(uint64_t));
+
+  {
+    buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+    sycl::event evt_4 = q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.depends_on({evt_3});
+      h.parallel_for(
+          sycl::nd_range<2>{sycl::range<2>{n, n}, sycl::range<2>{1, wg_size}},
+          [=](sycl::nd_item<2> it) {
+            const uint64_t r = it.get_global_id(0);
+            const uint64_t c = it.get_global_id(1);
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add(*(vec_d + r * n + c) % MOD ==
+                                       ff_p_mult(*(vec_s + r * n + c),
+                                                 ff_p_pow(*omega, r * c)) %
+                                           MOD
+                                   ? 0
+                                   : 1);
+          });
+    });
+    evt_3.wait();
+  }
+
+  assert(*mismatch == 0);
+  std::free(mismatch);
+
+  sycl::free(vec_s, q);
+  sycl::free(vec_d, q);
+  sycl::free(omega, q);
+}
+
+void test_six_step_fft(sycl::queue &q, const uint64_t dim,
+                       const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_src = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+  uint64_t *vec_fwd = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+  uint64_t *vec_dev =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
+
+  prepare_random_vector(vec_src, dim);
+  q.memcpy(vec_dev, vec_src, sizeof(uint64_t) * dim).wait();
+
+  // waits till completion
+  six_step_fft(q, vec_dev, dim, wg_size);
+
+  {
+    buf_1d_u64_t buf_vec_src{vec_src, sycl::range<1>{dim}};
+    buf_1d_u64_t buf_vec_fwd{vec_fwd, sycl::range<1>{dim}};
+
+    cooley_tukey_fft(q, buf_vec_src, buf_vec_fwd, dim, wg_size);
+
+    uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+    memset(mismatch, 0, sizeof(uint64_t));
+    {
+      buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+      q.submit([&](sycl::handler &h) {
+        buf_1d_u64_rd_t acc_vec_fwd{buf_vec_fwd, h};
+        buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+        h.parallel_for<class kernelCompareCooleyTukeyFFTWithSSA>(
+            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+            [=](sycl::nd_item<1> it) {
+              const size_t r = it.get_global_id(0);
+
+              sycl::ext::oneapi::atomic_ref<
+                  uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                  sycl::memory_scope::device,
+                  sycl::access::address_space::global_device_space>
+                  corr_ref{acc_mismatch[0]};
+              corr_ref.fetch_add(
+                  acc_vec_fwd[r] % MOD == *(vec_dev + r) % MOD ? 0 : 1);
+            });
+      });
+      q.wait();
+    }
+
+    assert(*mismatch == 0);
+    std::free(mismatch);
+  }
+
+  std::free(vec_src);
+  std::free(vec_fwd);
+  sycl::free(vec_dev, q);
+}
+
+void test_six_step_ifft(sycl::queue &q, const uint64_t dim,
+                        const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_src = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+  uint64_t *vec_inv = static_cast<uint64_t *>(malloc(sizeof(uint64_t) * dim));
+  uint64_t *vec_dev =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
+
+  prepare_random_vector(vec_src, dim);
+  q.memcpy(vec_dev, vec_src, sizeof(uint64_t) * dim).wait();
+
+  // waits till completion
+  six_step_ifft(q, vec_dev, dim, wg_size);
+
+  {
+    buf_1d_u64_t buf_vec_src{vec_src, sycl::range<1>{dim}};
+    buf_1d_u64_t buf_vec_inv{vec_inv, sycl::range<1>{dim}};
+
+    cooley_tukey_ifft(q, buf_vec_src, buf_vec_inv, dim, wg_size);
+
+    uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+    memset(mismatch, 0, sizeof(uint64_t));
+    {
+      buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+      q.submit([&](sycl::handler &h) {
+        buf_1d_u64_rd_t acc_vec_inv{buf_vec_inv, h};
+        buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+        h.parallel_for<class kernelCompareCooleyTukeyIFFTWithSSA>(
+            sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+            [=](sycl::nd_item<1> it) {
+              const size_t r = it.get_global_id(0);
+
+              sycl::ext::oneapi::atomic_ref<
+                  uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                  sycl::memory_scope::device,
+                  sycl::access::address_space::global_device_space>
+                  corr_ref{acc_mismatch[0]};
+              corr_ref.fetch_add(
+                  acc_vec_inv[r] % MOD == *(vec_dev + r) % MOD ? 0 : 1);
+            });
+      });
+      q.wait();
+    }
+
+    assert(*mismatch == 0);
+    std::free(mismatch);
+  }
+
+  std::free(vec_src);
+  std::free(vec_inv);
+  sycl::free(vec_dev, q);
+}
+
+void test_six_step_fft_and_ifft(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size) {
+  assert((dim & (dim - 1ul)) == 0);
+  uint64_t log_2_dim = (uint64_t)sycl::log2((float)dim);
+  assert(log_2_dim > 0 && log_2_dim <= TWO_ADICITY);
+
+  uint64_t *vec_src =
+      static_cast<uint64_t *>(sycl::malloc_shared(sizeof(uint64_t) * dim, q));
+  uint64_t *vec_fwd =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
+  uint64_t *vec_inv =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * dim, q));
+
+  prepare_random_vector(vec_src, dim);
+
+  q.memcpy(vec_fwd, vec_src, sizeof(uint64_t) * dim).wait();
+  six_step_fft(q, vec_fwd, dim, wg_size);
+
+  q.memcpy(vec_inv, vec_fwd, sizeof(uint64_t) * dim).wait();
+  six_step_ifft(q, vec_inv, dim, wg_size);
+
+  uint64_t *mismatch = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
+  memset(mismatch, 0, sizeof(uint64_t));
+  {
+    buf_1d_u64_t buf_mismatch{mismatch, sycl::range<1>{1}};
+
+    q.submit([&](sycl::handler &h) {
+      buf_1d_u64_rw_t acc_mismatch{buf_mismatch, h};
+
+      h.parallel_for<class kernelCompareSSAFFTAndIFFT>(
+          sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
+          [=](sycl::nd_item<1> it) {
+            const size_t r = it.get_global_id(0);
+
+            sycl::ext::oneapi::atomic_ref<
+                uint64_t, sycl::ext::oneapi::memory_order::relaxed,
+                sycl::memory_scope::device,
+                sycl::access::address_space::global_device_space>
+                corr_ref{acc_mismatch[0]};
+            corr_ref.fetch_add(
+                *(vec_inv + r) % MOD == *(vec_src + r) % MOD ? 0 : 1);
+          });
+    });
+    q.wait();
+  }
+
+  assert(*mismatch == 0);
+  std::free(mismatch);
+
+  sycl::free(vec_src, q);
+  sycl::free(vec_fwd, q);
+  sycl::free(vec_inv, q);
+}

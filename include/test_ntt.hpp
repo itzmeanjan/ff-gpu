@@ -16,3 +16,33 @@ void check_ntt_forward_inverse_transform(sycl::queue &q, const uint64_t dim,
 
 void check_cooley_tukey_ntt(sycl::queue &q, const uint64_t dim,
                             const uint64_t wg_size);
+
+// Asserts parallel in-place square matrix transposition
+// by performing double transpose of same matrix & finally
+// parallelly asserting cells, using atomics
+void check_matrix_transposition(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size);
+
+void test_compute_twiddles(sycl::queue &q, const uint64_t dim,
+                           const uint64_t wg_size);
+
+void test_twiddle_factor_multiplication(sycl::queue &q, const uint64_t n1,
+                                        const uint64_t n2,
+                                        const uint64_t wg_size);
+
+void test_six_step_fft(sycl::queue &q, const uint64_t dim,
+                       const uint64_t wg_size);
+
+void test_six_step_ifft(sycl::queue &q, const uint64_t dim,
+                        const uint64_t wg_size);
+
+/*
+    Prepares random vector with field elements of provided
+    domain size, then performs six step FFT, which is again passed
+    through six step IFFT. Finally input vector is matched element wise
+    with IFFT result.
+
+    Based on `input = ifft(fft(input))`
+*/
+void test_six_step_fft_and_ifft(sycl::queue &q, const uint64_t dim,
+                                const uint64_t wg_size);

@@ -10,7 +10,12 @@ In this repository, currently I keep implementation of two finite field's arithm
 - Binary Extension Field `F(2 ** 32)`
 - Prime Field `F(2 ** 64 - 2 ** 32 + 1)`
 
-I've also written Rescue Prime Hash function implementation, along with benchmark results on CPU, GPU.
+I've also written following implementations, along with benchmark results on CPU, GPU.
+
+- Rescue Prime Hash function
+- Six step algorithm based (I)*N*umber *T*heoretic *T*ransform
+- Cooley-Tukey algorithm based (I)NTT
+- DFT-style (I)NTT
 
 ## Prerequisites
 
@@ -42,8 +47,17 @@ InstalledDir: /opt/intel/oneapi/compiler/2021.3.0/linux/bin
 - Compile, link & run
 
 ```bash
-make # JIT kernel compilation, for AOT read below
+make # JIT kernel compilation on *default* device, for AOT read below
 ./run
+```
+
+- But you may be interested in targeting specific device, if you've multiple
+devices to choose from in runtime. Specify target device (which is to be used in runtime) during compilation phase using
+
+```bash
+DEVICE=cpu make   # still JIT, but in runtime use CPU
+DEVICE=gpu make   # still JIT, but in runtime use GPU
+DEVICE=host make  # still JIT, but in runtime use HOST
 ```
 
 - Clean using
@@ -69,13 +83,13 @@ lscpu | grep -i avx
 - AOT Compilation targeting CPU can be invoked using
 
 ```bash
-make aot_cpu
+DEVICE=cpu make aot_cpu
 ```
 
 - I also provide recipe for AOT compiling kernels targeting Intel Iris Xe Max Graphics
 
 ```bash
-make aot_gpu
+DEVICE=gpu make aot_gpu
 ```
 
 > You may have some other hardware, consider taking a look at AOT compilation [guidelines](https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-compiler-dev-guide-and-reference/top/compilation/ahead-of-time-compilation.html) & make necessary changes in `Makefile`.
@@ -87,13 +101,18 @@ I run benchmarking code on both **CPU** and **GPGPU**, keeping results 👇
 - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
 - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
 - [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/rescue_prime.md)
+- [Six step algorithm-based (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#six-step-algorithm-based-intt)
+- [Cooley-Tukey (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#cooley-tukey-inv-fft)
+- [DFT-style (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#dft-style-ntt)
 
 ## Tests
 
 You can run basic test cases using
 
 ```bash
-make test
+# set variable to runtime target device
+
+DEVICE=cpu|gpu|host make test 
 ```
 
 There's another set of randomised test cases, which asserts results *( obtained from my prime field implementation )* with another finite field implementation module, written in `Python`, named `galois`.
@@ -101,7 +120,9 @@ There's another set of randomised test cases, which asserts results *( obtained 
 For running those, I suggest you first compile shared object using
 
 ```bash
-make genlib
+# set variable to runtime target device
+
+DEVICE=cpu|gpu|host make genlib
 ```
 
 After that you can follow next steps [here](wrapper/python).
