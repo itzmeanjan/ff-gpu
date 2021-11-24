@@ -276,6 +276,8 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                 }
               });
         } else {
+          // note, subgroup based shuffling implementation
+          // takes inspiration from https://arxiv.org/pdf/2109.14704.pdf
           h.parallel_for<class kernelCooleyTukeySGFFT>(
               sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
               [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
@@ -400,6 +402,8 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                 }
               });
         } else {
+          // note, subgroup based shuffling implementation
+          // takes inspiration from https://arxiv.org/pdf/2109.14704.pdf
           h.parallel_for<class kernelCooleyTukeySGIFFT>(
               sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
               [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
@@ -637,6 +641,9 @@ sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
         //
         // so in that case, I get to enjoy faster subgroup collective
         // functions, which make use of SIMD in better way
+        //
+        // note, subgroup based shuffling implementation
+        // takes inspiration from https://arxiv.org/pdf/2109.14704.pdf
         h.parallel_for<class kernelCooleyTukeyRowWiseSGFFT>(
             sycl::nd_range<2>{sycl::range<2>{rows, cols},
                               sycl::range<2>{1, wg_size}},
