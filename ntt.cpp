@@ -225,7 +225,15 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   uint64_t *omega = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
 
   {
+    // if you change this number, make sure
+    // you also change `[[intel::reqd_sub_group_size(Z)]]`
+    // below, such that SUBGROUP_SIZE == Z
     constexpr uint64_t SUBGROUP_SIZE = 1ul << 5;
+
+    // don't change following assertions !
+    assert((SUBGROUP_SIZE & (SUBGROUP_SIZE - 1ul)) == 0ul &&
+           (SUBGROUP_SIZE <= (1ul << 6)));
+    assert((wg_size % SUBGROUP_SIZE) == 0);
 
     buf_1d_u64_t buf_omega{omega, sycl::range<1>{1}};
     buf_omega.set_write_back(false);
@@ -245,7 +253,7 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
         buf_1d_u64_rw_t acc_res{res, h};
 
         if ((1ul << i) >= SUBGROUP_SIZE) {
-          h.parallel_for<class kernelCooleyTukeyFFTMain>(
+          h.parallel_for<class kernelCooleyTukeyGMFFT>(
               sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
               [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
                 sycl::sub_group sg = it.get_sub_group();
@@ -268,7 +276,7 @@ void cooley_tukey_fft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                 }
               });
         } else {
-          h.parallel_for<class kernelCooleyTukeyFFTSG>(
+          h.parallel_for<class kernelCooleyTukeySGFFT>(
               sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
               [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
                 sycl::sub_group sg = it.get_sub_group();
@@ -332,7 +340,15 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
   uint64_t *dim_inv = static_cast<uint64_t *>(malloc(sizeof(uint64_t)));
 
   {
+    // if you change this number, make sure
+    // you also change `[[intel::reqd_sub_group_size(Z)]]`
+    // below, such that SUBGROUP_SIZE == Z
     constexpr uint64_t SUBGROUP_SIZE = 1ul << 5;
+
+    // don't change following assertions !
+    assert((SUBGROUP_SIZE & (SUBGROUP_SIZE - 1ul)) == 0ul &&
+           (SUBGROUP_SIZE <= (1ul << 6)));
+    assert((wg_size % SUBGROUP_SIZE) == 0);
 
     buf_1d_u64_t buf_omega_inv{omega_inv, sycl::range<1>{1}};
     buf_1d_u64_t buf_dim_inv{dim_inv, sycl::range<1>{1}};
@@ -361,7 +377,7 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
         buf_1d_u64_rw_t acc_res{res, h};
 
         if ((1ul << i) >= SUBGROUP_SIZE) {
-          h.parallel_for<class kernelCooleyTukeyIFFTMain>(
+          h.parallel_for<class kernelCooleyTukeyGMIFFT>(
               sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
               [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
                 sycl::sub_group sg = it.get_sub_group();
@@ -384,7 +400,7 @@ void cooley_tukey_ifft(sycl::queue &q, buf_1d_u64_t &vec, buf_1d_u64_t &res,
                 }
               });
         } else {
-          h.parallel_for<class kernelCooleyTukeyIFFTSG>(
+          h.parallel_for<class kernelCooleyTukeySGIFFT>(
               sycl::nd_range<1>{sycl::range<1>{dim}, sycl::range<1>{wg_size}},
               [=](sycl::nd_item<1> it) [[intel::reqd_sub_group_size(32)]] {
                 sycl::sub_group sg = it.get_sub_group();
@@ -557,6 +573,16 @@ sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
   std::vector<sycl::event> _evts;
   _evts.reserve(log_2_dim);
 
+  // if you change this number, make sure
+  // you also change `[[intel::reqd_sub_group_size(Z)]]`
+  // below, such that SUBGROUP_SIZE == Z
+  constexpr uint64_t SUBGROUP_SIZE = 1ul << 5;
+
+  // don't change following assertions !
+  assert((SUBGROUP_SIZE & (SUBGROUP_SIZE - 1ul)) == 0ul &&
+         (SUBGROUP_SIZE <= (1ul << 6)));
+  assert((wg_size % SUBGROUP_SIZE) == 0);
+
   for (int64_t i = log_2_dim - 1ul; i >= 0; i--) {
     sycl::event evt = q.submit([&](sycl::handler &h) {
       if (i == log_2_dim - 1ul) {
@@ -570,29 +596,80 @@ sycl::event row_wise_transform(sycl::queue &q, uint64_t *vec, uint64_t *omega,
         h.depends_on(_evts.at(log_2_dim - (i + 2)));
       }
 
-      h.parallel_for<class kernelCooleyTukeyRowWiseFFT>(
-          sycl::nd_range<2>{sycl::range<2>{rows, cols},
-                            sycl::range<2>{1, wg_size}},
-          [=](sycl::nd_item<2> it) {
-            sycl::sub_group sg = it.get_sub_group();
+      if ((1ul << i) >= SUBGROUP_SIZE) {
+        // cooley tukey based NTT implementation, with global memory
+        // based communication ( relatively slow ! )
+        h.parallel_for<class kernelCooleyTukeyRowWiseGMFFT>(
+            sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                              sycl::range<2>{1, wg_size}},
+            [=](sycl::nd_item<2> it) [[intel::reqd_sub_group_size(32)]] {
+              sycl::sub_group sg = it.get_sub_group();
 
-            const uint64_t r = it.get_global_id(0);
-            const uint64_t k = it.get_global_id(1);
-            const uint64_t p = 1ul << i;
-            const uint64_t q = cols / p;
+              const uint64_t r = it.get_global_id(0);
+              const uint64_t k = it.get_global_id(1);
+              const uint64_t p = 1ul << i;
+              const uint64_t q = cols / p;
 
-            uint64_t k_rev = bit_rev(k, log_2_dim) % q;
-            uint64_t ω = ff_p_pow(sycl::group_broadcast(sg, *omega), p * k_rev);
+              uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+              uint64_t ω =
+                  ff_p_pow(sycl::group_broadcast(sg, *omega), p * k_rev);
 
-            if (k % p == k % (2 * p)) {
+              if (k < (k ^ p)) {
+                uint64_t tmp_k = *(vec + r * width + k);
+                uint64_t tmp_k_p = *(vec + r * width + (k ^ p));
+                uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+
+                *(vec + r * width + k) = ff_p_add(tmp_k, tmp_k_p_ω);
+                *(vec + r * width + (k ^ p)) = ff_p_sub(tmp_k, tmp_k_p_ω);
+              }
+            });
+      } else {
+        // cooley tukey based NTT implementation, with subgroup
+        // based shuffling ( much faster than global memory based ! )
+        //
+        // but I can't use this variant for all iterations, as
+        // subgroup size is not always larger than (1ul << i)
+        //
+        // note, (1ul << i) is NTT butterfly gap for iteration `i`
+        //
+        // only when control flow reaches this conditional block
+        // NTT butterfly shuffling will be in a subgroup itself
+        //
+        // so in that case, I get to enjoy faster subgroup collective
+        // functions, which make use of SIMD in better way
+        h.parallel_for<class kernelCooleyTukeyRowWiseSGFFT>(
+            sycl::nd_range<2>{sycl::range<2>{rows, cols},
+                              sycl::range<2>{1, wg_size}},
+            [=](sycl::nd_item<2> it) [[intel::reqd_sub_group_size(32)]] {
+              sycl::sub_group sg = it.get_sub_group();
+
+              const uint64_t r = it.get_global_id(0);
+              const uint64_t k = it.get_global_id(1);
+              const uint64_t p = 1ul << i; // mask for subgroup shuffling
+              const uint64_t q = cols / p;
+
+              uint64_t k_rev = bit_rev(k, log_2_dim) % q;
+              uint64_t ω =
+                  ff_p_pow(sycl::group_broadcast(sg, *omega), p * k_rev);
+
               uint64_t tmp_k = *(vec + r * width + k);
-              uint64_t tmp_k_p = *(vec + r * width + k + p);
-              uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+              uint64_t tmp_k_p = sg.shuffle_xor(tmp_k, p);
+              uint64_t ω_ = sg.shuffle_xor(ω, p);
 
-              *(vec + r * width + k) = ff_p_add(tmp_k, tmp_k_p_ω);
-              *(vec + r * width + k + p) = ff_p_sub(tmp_k, tmp_k_p_ω);
-            }
-          });
+              *(vec + r * width + k) =
+                  k < (k ^ p) ? ff_p_add(tmp_k, ff_p_mult(tmp_k_p, ω))
+                              : ff_p_sub(tmp_k_p, ff_p_mult(tmp_k, ω_));
+
+              // if (k % p == k % (2 * p)) {
+              //   uint64_t tmp_k = *(vec + r * width + k);
+              //   uint64_t tmp_k_p = *(vec + r * width + k + p);
+              //   uint64_t tmp_k_p_ω = ff_p_mult(tmp_k_p, ω);
+
+              //   *(vec + r * width + k) = ff_p_add(tmp_k, tmp_k_p_ω);
+              //   *(vec + r * width + k + p) = ff_p_sub(tmp_k, tmp_k_p_ω);
+              // }
+            });
+      }
     });
     _evts.push_back(evt);
   }
