@@ -128,6 +128,8 @@ int64_t benchmark_twiddle_factor_multiplication(sycl::queue &q,
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n * n, q));
   uint64_t *omega =
       static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t), q));
+  uint64_t *twiddles =
+      static_cast<uint64_t *>(sycl::malloc_device(sizeof(uint64_t) * n2, q));
 
   q.memset(vec_h, 0, sizeof(uint64_t) * n * n).wait();
   q.single_task([=]() {
@@ -144,16 +146,17 @@ int64_t benchmark_twiddle_factor_multiplication(sycl::queue &q,
     }
   }
 
-  sycl::event evt_0 = q.memcpy(vec_d, vec_h, sizeof(uint64_t) * n * n);
-  evt_0.wait();
+  q.memcpy(vec_d, vec_h, sizeof(uint64_t) * n * n).wait();
+  compute_twiddles(q, twiddles, omega, n2, wg_size, {}).wait();
 
   tp start = std::chrono::steady_clock::now();
-  twiddle_multiplication(q, vec_d, omega, n2, n1, n, wg_size, {}).wait();
+  twiddle_multiplication(q, vec_d, twiddles, n2, n1, n, wg_size, {}).wait();
   tp end = std::chrono::steady_clock::now();
 
   sycl::free(vec_h, q);
   sycl::free(vec_d, q);
   sycl::free(omega, q);
+  sycl::free(twiddles, q);
 
   return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
       .count();
