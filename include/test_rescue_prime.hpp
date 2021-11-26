@@ -10,7 +10,7 @@ void test_alphas(sycl::queue &q);
 
 void test_sbox(sycl::queue &q);
 
-void random_array(uint64_t *const arr, const uint64_t count);
+void random_rescue_prime_state(rescue_prime_state_t *arr);
 
 void test_inv_sbox(sycl::queue &q);
 

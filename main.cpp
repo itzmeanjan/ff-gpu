@@ -338,14 +338,11 @@ int main(int argc, char **argv) {
             << "\t\t" << std::setw(20) << "avg"
             << "\t\t" << std::setw(20) << "op/s" << std::endl;
 
-  for (uint dim = B; dim <= N; dim <<= 1) {
-    tp start = std::chrono::steady_clock::now();
-    benchmark_hash_elements(q, dim, B, N);
-    tp end = std::chrono::steady_clock::now();
+  for (uint dim = B; dim <= (1ul << 12); dim <<= 1) {
+    // note iteration count is set to 1, so each work-item
+    // only hashes input one time
+    int64_t tm = benchmark_hash_elements(q, dim, 1ul << 6, 1);
 
-    int64_t tm =
-        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-            .count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << 1
               << "\t\t" << std::setw(15) << std::right << tm << " us"
