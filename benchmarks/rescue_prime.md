@@ -11,15 +11,15 @@ I setup benchmarking with a 2D grid of work-items of dimension N x N, where N = 
 ```bash
 running on Intel(R) Xeon(R) Gold 6128 CPU @ 3.40GHz
 
-rescue prime hash on F(2**64 - 2**32 + 1) elements 👇                                      
+rescue prime hash on F(2**64 - 2**32 + 1) elements 👇
 
-  dimension             iterations                        total                          avg                            op/s                                                                                                                                                    
-128  x  128                    1                          54666 us                      3.33655 us                       299711                                                                                                                                                 
-256  x  256                    1                         160172 us                      2.44403 us                       409160                                                                                                                                                 
-512  x  512                    1                         635313 us                      2.42353 us                       412622                                                                                                                                                 
-1024 x 1024                    1                        2530078 us                      2.41287 us                       414444                                                                                                                                                 
-2048 x 2048                    1                       10154839 us                       2.4211 us                       413035                                                                                                                                                 
-4096 x 4096                    1                       40395352 us                      2.40775 us                       415325
+  dimension		iterations		          total		                 avg		                op/s
+128  x  128		       1		          49722 us		        3.03479 us		         329512
+256  x  256		       1		         162410 us		        2.47818 us		         403522
+512  x  512		       1		         639436 us		        2.43925 us		         409961
+1024 x 1024		       1		        2538022 us		        2.42045 us		         413147
+2048 x 2048		       1		       10113576 us		        2.41126 us		         414720
+4096 x 4096		       1		       40439263 us		        2.41037 us		         414874
 ```
 
 ```bash
@@ -27,13 +27,13 @@ running on Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz
 
 rescue prime hash on F(2**64 - 2**32 + 1) elements 👇
 
-  dimension             iterations                        total                          avg                            op/s
-128  x  128                    1                          30587 us                      1.86688 us                       535652
-256  x  256                    1                          51024 us                     0.778564 us                  1.28442e+06
-512  x  512                    1                         163562 us                      0.62394 us                  1.60272e+06
-1024 x 1024                    1                         635064 us                     0.605644 us                  1.65113e+06
-2048 x 2048                    1                        2495802 us                     0.595046 us                  1.68054e+06
-4096 x 4096                    1                        8674517 us                     0.517042 us                  1.93408e+06
+  dimension		iterations		          total		                 avg		                op/s
+128  x  128		       1		          25644 us		        1.56519 us		         638902
+256  x  256		       1		          49490 us		       0.755157 us		    1.32423e+06
+512  x  512		       1		         163912 us		       0.625275 us		     1.5993e+06
+1024 x 1024		       1		         636838 us		       0.607336 us		    1.64653e+06
+2048 x 2048		       1		        2491102 us		       0.593925 us		    1.68371e+06
+4096 x 4096		       1		        8382231 us		        0.49962 us		    2.00152e+06
 ```
 
 ### On GPU
@@ -43,11 +43,11 @@ running on Intel(R) Iris(R) Xe MAX Graphics [0x4905]
 
 rescue prime hash on F(2**64 - 2**32 + 1) elements 👇
 
-  dimension             iterations                        total                          avg                            op/s
-128  x  128                    1                           1379 us                    0.0841675 us                  1.18811e+07
-256  x  256                    1                            174 us                   0.00265503 us                  3.76644e+08
-512  x  512                    1                            264 us                   0.00100708 us                   9.9297e+08
-1024 x 1024                    1                            828 us                  0.000789642 us                   1.2664e+09
-2048 x 2048                    1                           3100 us                  0.000739098 us                    1.353e+09
-4096 x 4096                    1                          12174 us                  0.000725627 us                  1.37812e+09
+  dimension		iterations		          total		                 avg		                op/s
+128  x  128		       1		          11589 us		       0.707336 us		    1.41375e+06
+256  x  256		       1		          36109 us		        0.55098 us		    1.81495e+06
+512  x  512		       1		         131971 us		       0.503429 us		    1.98638e+06
+1024 x 1024		       1		         521590 us		       0.497427 us		    2.01035e+06
+2048 x 2048		       1		        2076505 us		       0.495077 us		    2.01989e+06
+4096 x 4096		       1		        8334105 us		       0.496751 us		    2.01308e+06
 ```
