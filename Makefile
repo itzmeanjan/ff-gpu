@@ -126,6 +126,7 @@ cuda:
 	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_ntt.cpp -o bench_ntt.o
 	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ff.cpp -o ff.o
 	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ff_p.cpp -o ff_p.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ntt.cpp -o ntt.o
 	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c rescue_prime.cpp -o rescue_prime.o
 	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c tests/test_ntt.cpp -o test_ntt.o
 	$(CXX) $(SYCLCUDAFLAGS) *.o -o $(PROG)
