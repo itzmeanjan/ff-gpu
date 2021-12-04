@@ -96,14 +96,29 @@ DEVICE=gpu make aot_gpu
 
 ---
 
-I run benchmarking code on both **CPU** and **GPGPU**, keeping results 👇
+**Targeting  Nvidia GPU with CUDA backend :**
 
-- [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
-- [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
-- [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/rescue_prime.md)
-- [Six step algorithm-based (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#six-step-algorithm-based-intt)
-- [Cooley-Tukey (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#cooley-tukey-inv-fft)
-- [DFT-style (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#dft-style-ntt)
+> For targeting Nvidia GPU, you want to run `DEVICE=gpu make cuda`, so that benchmark suite is compiled for CUDA backend. I suggest you read [this](https://github.com/itzmeanjan/ff-p254-gpu/blob/acbedab1dd653f7270ac917755286c565d2a8927/README.md#prerequisite) for setting up your machine with Nvidia GPU, if you've not yet.
+
+---
+
+I run benchmark suite on both **Intel CPU/ GPU** and **Nvidia GPU**, keeping results 👇
+
+- Intel CPU/ GPU
+    - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
+    - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
+    - [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/rescue_prime.md)
+    - [Six step algorithm-based (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#six-step-algorithm-based-intt)
+    - [Cooley-Tukey (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#cooley-tukey-inv-fft)
+    - [DFT-style (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#dft-style-ntt)
+
+- Nvidia GPU
+    - [Arithmetics on `F(2 ** 32)`](benchmarks/cuda_ff.md)
+    - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_ff_p.md)
+    - [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_rescue_prime.md)
+    - [(Inverse) Number Theoretic Transform on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_ntt.md)
+        - Cooley-Tukey (I)FFT
+        - Six Step Algorithm (I)FFT
 
 ## Tests
 
