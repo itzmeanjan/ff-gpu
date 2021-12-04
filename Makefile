@@ -1,6 +1,7 @@
-CXX = dpcpp
+CXX = clang++
 CXXFLAGS = -std=c++17 -Wall
 SYCLFLAGS = -fsycl -fsycl-default-sub-group-size 32
+SYCLCUDAFLAGS = -fsycl -fsycl-targets=nvptx64-nvidia-cuda
 INCLUDES = -I./include
 PROG = run
 
@@ -115,3 +116,16 @@ aot_gpu:
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c main.cpp -o main.o $(INCLUDES)
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c utils.cpp -o utils.o $(INCLUDES)
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs "-device 0x4905" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o
+
+cuda:
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c main.cpp -o main.o $(DFLAGS)
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c utils.cpp -o utils.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_ff.cpp -o bench_ff.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_ff_p.cpp -o bench_ff_p.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_rescue_prime.cpp -o bench_rescue_prime.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_ntt.cpp -o bench_ntt.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ff.cpp -o ff.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ff_p.cpp -o ff_p.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c rescue_prime.cpp -o rescue_prime.o
+	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c tests/test_ntt.cpp -o test_ntt.o
+	$(CXX) $(SYCLCUDAFLAGS) *.o -o $(PROG)
