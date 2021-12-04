@@ -11,33 +11,33 @@ typedef struct rescue_prime_state_t {
            f_7 = 0, f_8 = 0, f_9 = 0, f_a = 0, f_b = 0;
 } rescue_prime_state_t;
 
-extern SYCL_EXTERNAL void hash_elements(const uint64_t *elements,
+SYCL_EXTERNAL void hash_elements(const uint64_t *elements,
                                         const uint64_t count,
                                         uint64_t *const hash);
 
-extern SYCL_EXTERNAL void apply_permutation(rescue_prime_state_t *state);
+SYCL_EXTERNAL void apply_permutation(rescue_prime_state_t *state);
 
-extern SYCL_EXTERNAL void apply_round(rescue_prime_state_t *state,
+SYCL_EXTERNAL void apply_round(rescue_prime_state_t *state,
                                       const uint64_t round);
 
-extern SYCL_EXTERNAL void apply_sbox(rescue_prime_state_t *state);
+SYCL_EXTERNAL void apply_sbox(rescue_prime_state_t *state);
 
-extern SYCL_EXTERNAL uint64_t element_wise_accumulation(
+SYCL_EXTERNAL uint64_t element_wise_accumulation(
     rescue_prime_state_t *state_a, rescue_prime_state_t state_b);
 
-extern SYCL_EXTERNAL void apply_mds(rescue_prime_state_t *state);
+SYCL_EXTERNAL void apply_mds(rescue_prime_state_t *state);
 
-extern SYCL_EXTERNAL void apply_constants(rescue_prime_state_t *state,
+SYCL_EXTERNAL void apply_constants(rescue_prime_state_t *state,
                                           rescue_prime_state_t ark);
 
-extern SYCL_EXTERNAL void
+SYCL_EXTERNAL void
 element_wise_multiplication(rescue_prime_state_t *state_src_a,
                             rescue_prime_state_t *state_src_b,
                             rescue_prime_state_t *state_dst);
 
-extern SYCL_EXTERNAL void apply_inv_sbox(rescue_prime_state_t *state);
+SYCL_EXTERNAL void apply_inv_sbox(rescue_prime_state_t *state);
 
-extern SYCL_EXTERNAL void exp_acc(const uint64_t m, rescue_prime_state_t *base,
+SYCL_EXTERNAL void exp_acc(const uint64_t m, rescue_prime_state_t *base,
                                   rescue_prime_state_t *tail,
                                   rescue_prime_state_t *res);
 

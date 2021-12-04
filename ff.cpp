@@ -91,7 +91,7 @@ uint32_t ff_pow(const uint32_t a, const int32_t b) {
   }
 
   uint32_t a_ = a;
-  uint32_t b_ = b < 0 ? std::abs(b) : (uint32_t)b;
+  uint32_t b_ = b < 0 ? sycl::abs(b) : (uint32_t)b;
   if (b < 0) {
     a_ = ff_inv(a);
   }
