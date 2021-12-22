@@ -72,7 +72,7 @@ SYCL_EXTERNAL sycl::ulong accumulate_state(sycl::ulong16 state);
 // Performs matrix vector multiplication; updates state of rescue prime
 // hash by applying MDS matrix
 //
-// Adopted from
+// Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L201-L231
 SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state,
                                       sycl::ulong16 mds[12]);
@@ -82,5 +82,15 @@ SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state,
 // multiplications
 //
 // This is invoked from following `apply_inv_sbox` function ( multiple times )
+// See https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L242-L258 
+// for source of inspiration
 SYCL_EXTERNAL sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
                                     sycl::ulong16 tail);
+
+// Applies inverse sbox on rescue prime hash state --- this function
+// actually exponentiates rescue prime hash state by large number,
+// but as an optimization step, instead of performing all these expensive
+// modular exponentiations, 72 multiplications are performed
+//
+// Adapted from https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L260-L287
+SYCL_EXTERNAL sycl::ulong16 apply_inv_sbox(sycl::ulong16 state);

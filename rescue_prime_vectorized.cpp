@@ -103,3 +103,22 @@ sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
 
   return ff_p_vec_mul(res, tail);
 }
+
+sycl::ulong16 apply_inv_sbox(sycl::ulong16 state) {
+  sycl::ulong16 t1 = ff_p_vec_mul(state, state);
+  sycl::ulong16 t2 = ff_p_vec_mul(t1, t1);
+
+  sycl::ulong16 t3 = exp_acc(3, t2, t2);
+  sycl::ulong16 t4 = exp_acc(6, t3, t3);
+  t4 = exp_acc(12, t4, t4);
+
+  sycl::ulong16 t5 = exp_acc(6, t4, t3);
+  sycl::ulong16 t6 = exp_acc(31, t5, t5);
+
+  sycl::ulong16 a = ff_p_vec_mul(ff_p_vec_mul(t6, t6), t5);
+  a = ff_p_vec_mul(a, a);
+  a = ff_p_vec_mul(a, a);
+  sycl::ulong16 b = ff_p_vec_mul(ff_p_vec_mul(t1, t2), state);
+
+  return ff_p_vec_mul(a, b);
+}
