@@ -72,3 +72,23 @@ sycl::ulong accumulate_state(sycl::ulong16 state) {
 
   return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
 }
+
+sycl::ulong16 apply_mds(sycl::ulong16 state, sycl::ulong16 mds[12]) {
+  sycl::ulong v0 = accumulate_state(ff_p_vec_mul(state, mds[0]));
+  sycl::ulong v1 = accumulate_state(ff_p_vec_mul(state, mds[1]));
+  sycl::ulong v2 = accumulate_state(ff_p_vec_mul(state, mds[2]));
+  sycl::ulong v3 = accumulate_state(ff_p_vec_mul(state, mds[3]));
+  sycl::ulong v4 = accumulate_state(ff_p_vec_mul(state, mds[4]));
+  sycl::ulong v5 = accumulate_state(ff_p_vec_mul(state, mds[5]));
+  sycl::ulong v6 = accumulate_state(ff_p_vec_mul(state, mds[6]));
+  sycl::ulong v7 = accumulate_state(ff_p_vec_mul(state, mds[7]));
+  sycl::ulong v8 = accumulate_state(ff_p_vec_mul(state, mds[8]));
+  sycl::ulong v9 = accumulate_state(ff_p_vec_mul(state, mds[9]));
+  sycl::ulong v10 = accumulate_state(ff_p_vec_mul(state, mds[10]));
+  sycl::ulong v11 = accumulate_state(ff_p_vec_mul(state, mds[11]));
+
+  // note: last 4 vector lanes don't contribute anyway so, I'm
+  // just filling them with 0
+  return sycl::ulong16(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, 0, 0,
+                       0, 0);
+}
