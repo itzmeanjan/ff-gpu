@@ -41,3 +41,11 @@ sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b) {
 
   return tmp_3 + tmp_4;
 }
+
+sycl::ulong16 apply_sbox(sycl::ulong16 state) {
+  sycl::ulong16 state2 = ff_p_vec_mul(state, state);
+  sycl::ulong16 state4 = ff_p_vec_mul(state2, state2);
+  sycl::ulong16 state6 = ff_p_vec_mul(state2, state4);
+
+  return ff_p_vec_mul(state, state6);
+}

@@ -34,3 +34,13 @@ SYCL_EXTERNAL sycl::ulong16 ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b);
 // Collects quite some motivation from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L38-L66
 SYCL_EXTERNAL sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b);
+
+// Updates each element of rescue prime hash state ( 16 lane wide ) by exponentiating to
+// their 7-th power
+//
+// Note this implementation doesn't use modular exponentiation routine, instead
+// it uses multiple multiplications ( actually squaring )
+//
+// Collects huge motivation from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L68-L88
+SYCL_EXTERNAL sycl::ulong16 apply_sbox(sycl::ulong16 state);
