@@ -191,3 +191,38 @@ void hash_elements(const sycl::ulong *input_elements, const sycl::ulong count,
   *(hash + 2) = digest.z();
   *(hash + 3) = digest.w();
 }
+
+void prepare_mds(sycl::ulong16 *const mds) {
+  for (size_t i = 0; i < STATE_WIDTH; i++) {
+    sycl::ulong16 vec = sycl::ulong16(
+        MDS[i * 16 + 0], MDS[i * 16 + 1], MDS[i * 16 + 2], MDS[i * 16 + 3],
+        MDS[i * 16 + 4], MDS[i * 16 + 5], MDS[i * 16 + 6], MDS[i * 16 + 7],
+        MDS[i * 16 + 8], MDS[i * 16 + 9], MDS[i * 16 + 10], MDS[i * 16 + 11],
+        MDS[i * 16 + 12], MDS[i * 16 + 13], MDS[i * 16 + 14], MDS[i * 16 + 15]);
+    *(mds + i) = vec;
+  }
+}
+
+void prepare_ark1(sycl::ulong16 *const ark1) {
+  for (size_t i = 0; i < NUM_ROUNDS; i++) {
+    sycl::ulong16 vec = sycl::ulong16(
+        ARK1[i * 16 + 0], ARK1[i * 16 + 1], ARK1[i * 16 + 2], ARK1[i * 16 + 3],
+        ARK1[i * 16 + 4], ARK1[i * 16 + 5], ARK1[i * 16 + 6], ARK1[i * 16 + 7],
+        ARK1[i * 16 + 8], ARK1[i * 16 + 9], ARK1[i * 16 + 10],
+        ARK1[i * 16 + 11], ARK1[i * 16 + 12], ARK1[i * 16 + 13],
+        ARK1[i * 16 + 14], ARK1[i * 16 + 15]);
+    *(ark1 + i) = vec;
+  }
+}
+
+void prepare_ark2(sycl::ulong16 *const ark2) {
+  for (size_t i = 0; i < NUM_ROUNDS; i++) {
+    sycl::ulong16 vec = sycl::ulong16(
+        ARK2[i * 16 + 0], ARK2[i * 16 + 1], ARK2[i * 16 + 2], ARK2[i * 16 + 3],
+        ARK2[i * 16 + 4], ARK2[i * 16 + 5], ARK2[i * 16 + 6], ARK2[i * 16 + 7],
+        ARK2[i * 16 + 8], ARK2[i * 16 + 9], ARK2[i * 16 + 10],
+        ARK2[i * 16 + 11], ARK2[i * 16 + 12], ARK2[i * 16 + 13],
+        ARK2[i * 16 + 14], ARK2[i * 16 + 15]);
+    *(ark2 + i) = vec;
+  }
+}
