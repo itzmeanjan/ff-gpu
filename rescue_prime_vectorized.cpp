@@ -54,8 +54,18 @@ sycl::ulong16 apply_constants(sycl::ulong16 state, sycl::ulong16 cnst) {
   return ff_p_vec_add(state, cnst);
 }
 
-sycl::ulong reduce_sum_vec4(sycl::ulong4 a) {
+sycl::ulong accumulate_vec4(sycl::ulong4 a) {
   uint64_t v0 = ff_p_add(a.x(), a.y());
   uint64_t v1 = ff_p_add(a.z(), a.w());
+
   return static_cast<sycl::ulong>(ff_p_add(v0, v1));
+}
+
+sycl::ulong accumulate_state(sycl::ulong16 state) {
+  sycl::ulong v0 = accumulate_vec4(state.lo().lo());
+  sycl::ulong v1 = accumulate_vec4(state.lo().hi());
+  sycl::ulong v2 = accumulate_vec4(state.hi().lo());
+  sycl::ulong v3 = accumulate_vec4(state.hi().hi());
+
+  return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
 }

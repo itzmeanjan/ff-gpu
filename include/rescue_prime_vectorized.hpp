@@ -61,4 +61,10 @@ SYCL_EXTERNAL sycl::ulong16 apply_constants(sycl::ulong16 state,
 //
 // Adapted from here
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L143-L166
-SYCL_EXTERNAL sycl::ulong reduce_sum_vec4(sycl::ulong4 a);
+SYCL_EXTERNAL sycl::ulong accumulate_vec4(sycl::ulong4 a);
+
+// Accumulates state of rescue prime hash into single prime field element
+//
+// Takes some inspiration from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L168-L199
+SYCL_EXTERNAL sycl::ulong accumulate_state(sycl::ulong16 state);
