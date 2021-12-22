@@ -142,3 +142,52 @@ sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state) {
   }
   return state;
 }
+
+void hash_elements(const sycl::ulong *input_elements, const sycl::ulong count,
+                   sycl::ulong *const hash) {
+  sycl::ulong16 state = sycl::ulong16(0);
+  state.sB() = count % FIELD_MOD;
+
+  sycl::ulong i = 0;
+  for (sycl::ulong j = 0; j < count; j++) {
+    switch (i) {
+    case 0:
+      state.s0() = ff_p_add(state.s0(), *(input_elements + j));
+      break;
+    case 1:
+      state.s1() = ff_p_add(state.s1(), *(input_elements + j));
+      break;
+    case 2:
+      state.s2() = ff_p_add(state.s2(), *(input_elements + j));
+      break;
+    case 3:
+      state.s3() = ff_p_add(state.s3(), *(input_elements + j));
+      break;
+    case 4:
+      state.s4() = ff_p_add(state.s4(), *(input_elements + j));
+      break;
+    case 5:
+      state.s5() = ff_p_add(state.s5(), *(input_elements + j));
+      break;
+    case 7:
+      state.s7() = ff_p_add(state.s7(), *(input_elements + j));
+      break;
+    }
+
+    if ((++i) % RATE_WIDTH == 0) {
+      state = apply_rescue_permutation(state);
+      i = 0;
+    }
+  }
+
+  if (i > 0) {
+    state = apply_rescue_permutation(state);
+  }
+
+  sycl::ulong4 digest = static_cast<sycl::ulong4>(state.swizzle<0, 1, 2, 3>());
+
+  *(hash + 0) = digest.x();
+  *(hash + 1) = digest.y();
+  *(hash + 2) = digest.z();
+  *(hash + 3) = digest.w();
+}

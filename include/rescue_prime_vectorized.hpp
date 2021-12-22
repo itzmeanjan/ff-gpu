@@ -118,6 +118,19 @@ SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L315-L332
 SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state);
 
+// Computes rescue prime hash of input prime field elements, by consuming
+// all input elements into 12 elements wide hash state
+//
+// You may notice in implementation of this function, I represent hash
+// state using a vector with 16 lanes, so it's clear that last 4 lanes
+// don't hold any useful values
+//
+// Adapted from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L345-L422
+SYCL_EXTERNAL void hash_elements(const sycl::ulong *input_elements,
+                                 const sycl::ulong count,
+                                 sycl::ulong *const hash);
+
 inline constexpr sycl::ulong16 MDS[STATE_WIDTH] = {
     {2108866337646019936ull, 11223275256334781131ull, 2318414738826783588ull,
      11240468238955543594ull, 8007389560317667115ull, 11080831380224887131ull,
