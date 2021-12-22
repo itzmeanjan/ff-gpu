@@ -136,3 +136,13 @@ sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
 
   return state;
 }
+
+sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state,
+                                       sycl::ulong16 mds[12],
+                                       sycl::ulong16 ark1[7],
+                                       sycl::ulong16 ark2[7]) {
+  for (sycl::ulong i = 0; i < NUM_ROUNDS; i++) {
+    state = apply_permutation_round(state, mds, ark1[i], ark2[i]);
+  }
+  return state;
+}

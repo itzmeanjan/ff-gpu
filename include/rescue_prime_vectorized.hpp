@@ -106,3 +106,19 @@ SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
                                                     sycl::ulong16 mds[12],
                                                     sycl::ulong16 ark1,
                                                     sycl::ulong16 ark2);
+
+// Applies all rounds ( = 7 ) of rescue permutation, updating hash state
+//
+// Once RATE_WIDTH -many field elements are consumed from input stream
+// permutation is applied on hash state for mixing them well into state
+//
+// After all input is consumed, if there're some input which were
+// not mixed well ( i.e. some input were read after last rescue
+// permutation call ) this function will be required to be invoked again
+//
+// Adapted from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L315-L332
+SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state,
+                                                     sycl::ulong16 mds[12],
+                                                     sycl::ulong16 ark1[7],
+                                                     sycl::ulong16 ark2[7]);
