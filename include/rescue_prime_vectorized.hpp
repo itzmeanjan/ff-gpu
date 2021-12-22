@@ -74,7 +74,8 @@ SYCL_EXTERNAL sycl::ulong accumulate_state(sycl::ulong16 state);
 //
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L201-L231
-SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state);
+SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state,
+                                      const sycl::ulong16 *mds);
 
 // Instead of exponentiating hash state by some large number, this function
 // helps in computing exponentiation by performing multiple modular
@@ -102,6 +103,7 @@ SYCL_EXTERNAL sycl::ulong16 apply_inv_sbox(sycl::ulong16 state);
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L296-L313
 SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
+                                                    const sycl::ulong16 *mds,
                                                     sycl::ulong16 ark1,
                                                     sycl::ulong16 ark2);
 
@@ -116,7 +118,10 @@ SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
 //
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L315-L332
-SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state);
+SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state,
+                                                     const sycl::ulong16 *mds,
+                                                     const sycl::ulong16 *ark1,
+                                                     const sycl::ulong16 *ark2);
 
 // Computes rescue prime hash of input prime field elements, by consuming
 // all input elements into 12 elements wide hash state
@@ -127,9 +132,10 @@ SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state);
 //
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L345-L422
-SYCL_EXTERNAL void hash_elements(const sycl::ulong *input_elements,
-                                 const sycl::ulong count,
-                                 sycl::ulong *const hash);
+SYCL_EXTERNAL void
+hash_elements(const sycl::ulong *input_elements, const sycl::ulong count,
+              sycl::ulong *const hash, const sycl::ulong16 *mds,
+              const sycl::ulong16 *ark1, const sycl::ulong16 *ark2);
 
 // Stores MDS matrix in kernel expected form i.e. each row of matrix inside
 // vector with 16 lanes
@@ -336,7 +342,7 @@ inline constexpr sycl::ulong MDS[192] = {2108866337646019936ull,
                                          0,
                                          0};
 
-inline constexpr sycl::ulong ARK1[] = {13917550007135091859ull,
+inline constexpr sycl::ulong ARK1[112] = {13917550007135091859ull,
                                        16002276252647722320ull,
                                        4729924423368391595ull,
                                        10059693067827680263ull,
@@ -449,7 +455,7 @@ inline constexpr sycl::ulong ARK1[] = {13917550007135091859ull,
                                        0,
                                        0};
 
-inline constexpr sycl::ulong ARK2[] = {7989257206380839449ull,
+inline constexpr sycl::ulong ARK2[112] = {7989257206380839449ull,
                                        8639509123020237648ull,
                                        6488561830509603695ull,
                                        5519169995467998761ull,
