@@ -1,5 +1,5 @@
 #pragma once
-#include <CL/sycl.hpp>
+#include <ff_p.hpp>
 #include <limits>
 
 inline constexpr uint64_t FIELD_MOD = 18446744069414584321ull;
@@ -35,8 +35,8 @@ SYCL_EXTERNAL sycl::ulong16 ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b);
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L38-L66
 SYCL_EXTERNAL sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b);
 
-// Updates each element of rescue prime hash state ( 16 lane wide ) by exponentiating to
-// their 7-th power
+// Updates each element of rescue prime hash state ( 16 lane wide ) by
+// exponentiating to their 7-th power
 //
 // Note this implementation doesn't use modular exponentiation routine, instead
 // it uses multiple multiplications ( actually squaring )
@@ -44,3 +44,14 @@ SYCL_EXTERNAL sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b);
 // Collects huge motivation from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L68-L88
 SYCL_EXTERNAL sycl::ulong16 apply_sbox(sycl::ulong16 state);
+
+// Applies rescue round key constants on hash state
+//
+// actually simple vectorized modular addition --- that's all this routine does
+//
+// inline it ?
+//
+// Taken from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L97-L106
+SYCL_EXTERNAL sycl::ulong16 apply_constants(sycl::ulong16 state,
+                                            sycl::ulong16 cnst);

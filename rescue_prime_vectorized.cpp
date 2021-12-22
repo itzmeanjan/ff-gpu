@@ -49,3 +49,7 @@ sycl::ulong16 apply_sbox(sycl::ulong16 state) {
 
   return ff_p_vec_mul(state, state6);
 }
+
+sycl::ulong16 apply_constants(sycl::ulong16 state, sycl::ulong16 cnst) {
+  return ff_p_vec_add(state, cnst);
+}
