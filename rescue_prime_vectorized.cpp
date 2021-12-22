@@ -73,19 +73,19 @@ sycl::ulong accumulate_state(sycl::ulong16 state) {
   return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
 }
 
-sycl::ulong16 apply_mds(sycl::ulong16 state, sycl::ulong16 mds[12]) {
-  sycl::ulong v0 = accumulate_state(ff_p_vec_mul(state, mds[0]));
-  sycl::ulong v1 = accumulate_state(ff_p_vec_mul(state, mds[1]));
-  sycl::ulong v2 = accumulate_state(ff_p_vec_mul(state, mds[2]));
-  sycl::ulong v3 = accumulate_state(ff_p_vec_mul(state, mds[3]));
-  sycl::ulong v4 = accumulate_state(ff_p_vec_mul(state, mds[4]));
-  sycl::ulong v5 = accumulate_state(ff_p_vec_mul(state, mds[5]));
-  sycl::ulong v6 = accumulate_state(ff_p_vec_mul(state, mds[6]));
-  sycl::ulong v7 = accumulate_state(ff_p_vec_mul(state, mds[7]));
-  sycl::ulong v8 = accumulate_state(ff_p_vec_mul(state, mds[8]));
-  sycl::ulong v9 = accumulate_state(ff_p_vec_mul(state, mds[9]));
-  sycl::ulong v10 = accumulate_state(ff_p_vec_mul(state, mds[10]));
-  sycl::ulong v11 = accumulate_state(ff_p_vec_mul(state, mds[11]));
+sycl::ulong16 apply_mds(sycl::ulong16 state) {
+  sycl::ulong v0 = accumulate_state(ff_p_vec_mul(state, MDS[0]));
+  sycl::ulong v1 = accumulate_state(ff_p_vec_mul(state, MDS[1]));
+  sycl::ulong v2 = accumulate_state(ff_p_vec_mul(state, MDS[2]));
+  sycl::ulong v3 = accumulate_state(ff_p_vec_mul(state, MDS[3]));
+  sycl::ulong v4 = accumulate_state(ff_p_vec_mul(state, MDS[4]));
+  sycl::ulong v5 = accumulate_state(ff_p_vec_mul(state, MDS[5]));
+  sycl::ulong v6 = accumulate_state(ff_p_vec_mul(state, MDS[6]));
+  sycl::ulong v7 = accumulate_state(ff_p_vec_mul(state, MDS[7]));
+  sycl::ulong v8 = accumulate_state(ff_p_vec_mul(state, MDS[8]));
+  sycl::ulong v9 = accumulate_state(ff_p_vec_mul(state, MDS[9]));
+  sycl::ulong v10 = accumulate_state(ff_p_vec_mul(state, MDS[10]));
+  sycl::ulong v11 = accumulate_state(ff_p_vec_mul(state, MDS[11]));
 
   // note: last 4 vector lanes don't contribute anyway so, I'm
   // just filling them with 0
@@ -123,26 +123,22 @@ sycl::ulong16 apply_inv_sbox(sycl::ulong16 state) {
   return ff_p_vec_mul(a, b);
 }
 
-sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
-                                      sycl::ulong16 mds[12], sycl::ulong16 ark1,
+sycl::ulong16 apply_permutation_round(sycl::ulong16 state, sycl::ulong16 ark1,
                                       sycl::ulong16 ark2) {
   state = apply_sbox(state);
-  state = apply_mds(state, mds);
+  state = apply_mds(state);
   state = apply_constants(state, ark1);
 
   state = apply_inv_sbox(state);
-  state = apply_mds(state, mds);
+  state = apply_mds(state);
   state = apply_constants(state, ark2);
 
   return state;
 }
 
-sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state,
-                                       sycl::ulong16 mds[12],
-                                       sycl::ulong16 ark1[7],
-                                       sycl::ulong16 ark2[7]) {
+sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state) {
   for (sycl::ulong i = 0; i < NUM_ROUNDS; i++) {
-    state = apply_permutation_round(state, mds, ark1[i], ark2[i]);
+    state = apply_permutation_round(state, ARK1[i], ARK2[i]);
   }
   return state;
 }

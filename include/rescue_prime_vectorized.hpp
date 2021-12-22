@@ -74,8 +74,7 @@ SYCL_EXTERNAL sycl::ulong accumulate_state(sycl::ulong16 state);
 //
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L201-L231
-SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state,
-                                      sycl::ulong16 mds[12]);
+SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state);
 
 // Instead of exponentiating hash state by some large number, this function
 // helps in computing exponentiation by performing multiple modular
@@ -103,7 +102,6 @@ SYCL_EXTERNAL sycl::ulong16 apply_inv_sbox(sycl::ulong16 state);
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L296-L313
 SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
-                                                    sycl::ulong16 mds[12],
                                                     sycl::ulong16 ark1,
                                                     sycl::ulong16 ark2);
 
@@ -118,10 +116,7 @@ SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
 //
 // Adapted from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L315-L332
-SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state,
-                                                     sycl::ulong16 mds[12],
-                                                     sycl::ulong16 ark1[7],
-                                                     sycl::ulong16 ark2[7]);
+SYCL_EXTERNAL sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state);
 
 inline constexpr sycl::ulong16 MDS[STATE_WIDTH] = {
     {2108866337646019936ull, 11223275256334781131ull, 2318414738826783588ull,
