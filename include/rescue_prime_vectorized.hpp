@@ -7,6 +7,7 @@ inline constexpr uint64_t STATE_WIDTH = 12;
 inline constexpr uint64_t RATE_WIDTH = 8;
 inline constexpr uint64_t DIGEST_SIZE = 4;
 inline constexpr uint64_t NUM_ROUNDS = 7;
+inline constexpr uint64_t MAX_UINT = 0xffffffffull;
 
 /*
   Note : Actually I wanted to use `marray` instead of `vec`, but seems that
