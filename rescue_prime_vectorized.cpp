@@ -53,3 +53,9 @@ sycl::ulong16 apply_sbox(sycl::ulong16 state) {
 sycl::ulong16 apply_constants(sycl::ulong16 state, sycl::ulong16 cnst) {
   return ff_p_vec_add(state, cnst);
 }
+
+sycl::ulong reduce_sum_vec4(sycl::ulong4 a) {
+  uint64_t v0 = ff_p_add(a.x(), a.y());
+  uint64_t v1 = ff_p_add(a.z(), a.w());
+  return static_cast<sycl::ulong>(ff_p_add(v0, v1));
+}

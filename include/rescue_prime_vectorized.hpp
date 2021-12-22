@@ -55,3 +55,10 @@ SYCL_EXTERNAL sycl::ulong16 apply_sbox(sycl::ulong16 state);
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L97-L106
 SYCL_EXTERNAL sycl::ulong16 apply_constants(sycl::ulong16 state,
                                             sycl::ulong16 cnst);
+
+// Reduces four prime field element vector into single accumulated prime
+// field element, by performing modular addition
+//
+// Adapted from here
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L143-L166
+SYCL_EXTERNAL sycl::ulong reduce_sum_vec4(sycl::ulong4 a);
