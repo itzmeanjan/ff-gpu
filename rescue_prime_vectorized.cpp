@@ -62,10 +62,13 @@ sycl::ulong accumulate_vec4(sycl::ulong4 a) {
 }
 
 sycl::ulong accumulate_state(sycl::ulong16 state) {
-  sycl::ulong v0 = accumulate_vec4(state.lo().lo());
-  sycl::ulong v1 = accumulate_vec4(state.lo().hi());
-  sycl::ulong v2 = accumulate_vec4(state.hi().lo());
-  sycl::ulong v3 = accumulate_vec4(state.hi().hi());
+  sycl::ulong8 state_lo = state.lo();
+  sycl::ulong8 state_hi = state.hi();
+
+  sycl::ulong v0 = accumulate_vec4(state_lo.lo());
+  sycl::ulong v1 = accumulate_vec4(state_lo.hi());
+  sycl::ulong v2 = accumulate_vec4(state_hi.lo());
+  sycl::ulong v3 = accumulate_vec4(state_hi.hi());
 
   return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
 }
