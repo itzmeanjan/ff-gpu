@@ -15,8 +15,7 @@ inline constexpr uint64_t NUM_ROUNDS = 7;
   I will come and take a look later !
 */
 
-// Performs element wise prime field multiplication on two operand
-// vectors, for aforementioned 64-bit prime field
+// Performs element wise modular multiplication on two operand vectors
 //
 // Returned vector may not have all elements in canonical representation
 // so consider running `res % FIELD_MOD` before consumption !
@@ -24,3 +23,13 @@ inline constexpr uint64_t NUM_ROUNDS = 7;
 // Takes quite some motivation from
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L9-L36
 SYCL_EXTERNAL sycl::ulong16 ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b);
+
+// Performs element wise modular addition ( on aforementioned 64-bit prime field
+// ) on two supplied operands
+//
+// Before consumption consider performing `res % FIELD_MOD` so that all
+// lanes are in canonical form
+//
+// Collects quite some motivation from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L38-L66
+SYCL_EXTERNAL sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b);
