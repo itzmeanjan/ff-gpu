@@ -82,7 +82,8 @@ SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state,
 // multiplications
 //
 // This is invoked from following `apply_inv_sbox` function ( multiple times )
-// See https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L242-L258 
+// See
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L242-L258
 // for source of inspiration
 SYCL_EXTERNAL sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
                                     sycl::ulong16 tail);
@@ -92,5 +93,16 @@ SYCL_EXTERNAL sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
 // but as an optimization step, instead of performing all these expensive
 // modular exponentiations, 72 multiplications are performed
 //
-// Adapted from https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L260-L287
+// Adapted from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L260-L287
 SYCL_EXTERNAL sycl::ulong16 apply_inv_sbox(sycl::ulong16 state);
+
+// Apply a round of rescue permutation, which mixes/ consumes input into hash
+// state
+//
+// Adapted from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L296-L313
+SYCL_EXTERNAL sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
+                                                    sycl::ulong16 mds[12],
+                                                    sycl::ulong16 ark1,
+                                                    sycl::ulong16 ark2);

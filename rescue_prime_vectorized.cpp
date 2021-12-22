@@ -122,3 +122,17 @@ sycl::ulong16 apply_inv_sbox(sycl::ulong16 state) {
 
   return ff_p_vec_mul(a, b);
 }
+
+sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
+                                      sycl::ulong16 mds[12], sycl::ulong16 ark1,
+                                      sycl::ulong16 ark2) {
+  state = apply_sbox(state);
+  state = apply_mds(state, mds);
+  state = apply_constants(state, ark1);
+
+  state = apply_inv_sbox(state);
+  state = apply_mds(state, mds);
+  state = apply_constants(state, ark2);
+
+  return state;
+}
