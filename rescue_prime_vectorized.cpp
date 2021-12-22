@@ -174,6 +174,9 @@ void hash_elements(const sycl::ulong *input_elements, const sycl::ulong count,
     case 5:
       state.s5() = ff_p_add(state.s5(), *(input_elements + j));
       break;
+    case 6:
+      state.s6() = ff_p_add(state.s6(), *(input_elements + j));
+      break;
     case 7:
       state.s7() = ff_p_add(state.s7(), *(input_elements + j));
       break;
