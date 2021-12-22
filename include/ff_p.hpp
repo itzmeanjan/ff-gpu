@@ -4,7 +4,7 @@
 // Prime modulas of selected field, F_p,
 // where p = 2 ** 64 - 2 ** 32 + 1
 inline constexpr uint64_t MOD =
-    ((((uint64_t)1 << 63) - ((uint64_t)1 << 31)) << 1) + 1;
+  ((((uint64_t)1 << 63) - ((uint64_t)1 << 31)) << 1) + 1;
 
 // modular addition of two prime field elements
 //
@@ -13,7 +13,8 @@ inline constexpr uint64_t MOD =
 //
 // return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
-SYCL_EXTERNAL uint64_t ff_p_add(uint64_t a, uint64_t b);
+SYCL_EXTERNAL uint64_t
+ff_p_add(uint64_t a, uint64_t b);
 
 // modular subtraction of two prime field elements
 //
@@ -22,7 +23,8 @@ SYCL_EXTERNAL uint64_t ff_p_add(uint64_t a, uint64_t b);
 //
 // return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
-SYCL_EXTERNAL uint64_t ff_p_sub(uint64_t a, uint64_t b);
+SYCL_EXTERNAL uint64_t
+ff_p_sub(uint64_t a, uint64_t b);
 
 // modular mulitiplication of two prime field elements
 //
@@ -31,7 +33,8 @@ SYCL_EXTERNAL uint64_t ff_p_sub(uint64_t a, uint64_t b);
 //
 // return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
-SYCL_EXTERNAL uint64_t ff_p_mult(uint64_t a, uint64_t b);
+SYCL_EXTERNAL uint64_t
+ff_p_mult(uint64_t a, uint64_t b);
 
 // modular exponentiation of prime field element by unsigned integer
 //
@@ -39,7 +42,8 @@ SYCL_EXTERNAL uint64_t ff_p_mult(uint64_t a, uint64_t b);
 //
 // return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
-SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
+SYCL_EXTERNAL uint64_t
+ff_p_pow(uint64_t a, const uint64_t b);
 
 // finds multiplicative inverse of field element, given that it's
 // not additive identity
@@ -55,7 +59,8 @@ SYCL_EXTERNAL uint64_t ff_p_pow(uint64_t a, const uint64_t b);
 //
 // return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
-SYCL_EXTERNAL uint64_t ff_p_inv(uint64_t a);
+SYCL_EXTERNAL uint64_t
+ff_p_inv(uint64_t a);
 
 // modular division of one prime field element by another one
 //
@@ -66,4 +71,5 @@ SYCL_EXTERNAL uint64_t ff_p_inv(uint64_t a);
 //
 // return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
-SYCL_EXTERNAL uint64_t ff_p_div(uint64_t a, uint64_t b);
+SYCL_EXTERNAL uint64_t
+ff_p_div(uint64_t a, uint64_t b);

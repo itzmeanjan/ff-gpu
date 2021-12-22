@@ -9,7 +9,9 @@ using namespace sycl;
 const uint32_t N = 1 << 10;
 const uint32_t B = 1 << 7;
 
-int main(int argc, char **argv) {
+int
+main(int argc, char** argv)
+{
 // device selection is based on flag provided to compiler
 // such as `clang++ main.cpp {...}.cpp -D{CPU,GPU,HOST,DEFAULT} -fsycl
 // -std=c++20 -Wall`
@@ -17,16 +19,16 @@ int main(int argc, char **argv) {
 // but someone using make utility, should be invoking it as
 // `DEVICE=cpu|gpu|host make <target>`
 #if defined CPU
-  device d{cpu_selector{}};
+  device d{ cpu_selector{} };
 #elif defined GPU
-  device d{gpu_selector{}};
+  device d{ gpu_selector{} };
 #elif defined HOST
-  device d{host_selector{}};
+  device d{ host_selector{} };
 #else
-  device d{default_selector{}};
+  device d{ default_selector{} };
 #endif
 
-  queue q{d};
+  queue q{ d };
 
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
             << std::endl;
@@ -36,15 +38,15 @@ int main(int argc, char **argv) {
             << "\t\t\t" << std::setw(10) << "total" << std::endl;
 
   for (uint dim = B; dim <= N; dim <<= 1) {
-    uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * dim * dim);
+    uint32_t* mat = (uint32_t*)malloc(sizeof(uint32_t) * dim * dim);
 
     tp start = std::chrono::steady_clock::now();
     gen_hilbert_matrix_ff(q, mat, dim, B);
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+        .count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t\t" << std::setw(10) << std::right
               << tm << " us" << std::endl;
@@ -64,8 +66,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -85,8 +86,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -106,8 +106,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -127,8 +126,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -148,8 +146,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -169,8 +166,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -179,21 +175,21 @@ int main(int argc, char **argv) {
   }
 
   std::cout
-      << "\nhilbert matrix generation with F(2**64 - 2**32 + 1) elements 👇\n"
-      << std::endl;
+    << "\nhilbert matrix generation with F(2**64 - 2**32 + 1) elements 👇\n"
+    << std::endl;
   std::cout << std::setw(11) << "dimension"
             << "\t\t\t" << std::setw(10) << "total" << std::endl;
 
   for (uint dim = B; dim <= N; dim <<= 1) {
-    uint32_t *mat = (uint32_t *)malloc(sizeof(uint32_t) * dim * dim);
+    uint32_t* mat = (uint32_t*)malloc(sizeof(uint32_t) * dim * dim);
 
     tp start = std::chrono::steady_clock::now();
     gen_hilbert_matrix_ff_p(q, mat, dim, B);
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+        .count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t\t" << std::setw(10) << std::right
               << tm << " us" << std::endl;
@@ -213,8 +209,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -235,8 +230,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -257,8 +251,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -278,8 +271,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -299,8 +291,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -321,8 +312,7 @@ int main(int argc, char **argv) {
     tp end = std::chrono::steady_clock::now();
 
     int64_t tm =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << N
               << "\t\t" << std::setw(15) << std::right << tm << " ns"
@@ -401,8 +391,8 @@ int main(int argc, char **argv) {
   }
 
   std::cout
-      << "\nSquare Matrix Transposition on F(2**64 - 2**32 + 1) elements 👇\n"
-      << std::endl;
+    << "\nSquare Matrix Transposition on F(2**64 - 2**32 + 1) elements 👇\n"
+    << std::endl;
   std::cout << std::setw(10) << "dimension"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
@@ -415,21 +405,21 @@ int main(int argc, char **argv) {
   }
 
   std::cout
-      << "\nTwiddle Factor Multiplication on F(2**64 - 2**32 + 1) elements 👇\n"
-      << std::endl;
+    << "\nTwiddle Factor Multiplication on F(2**64 - 2**32 + 1) elements 👇\n"
+    << std::endl;
   std::cout << std::setw(11) << "dimension"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
   for (uint pow = 6; pow <= 10; pow++) {
     int64_t tm =
-        benchmark_twiddle_factor_multiplication(q, 1 << pow, 1 << pow, 1 << 6);
+      benchmark_twiddle_factor_multiplication(q, 1 << pow, 1 << pow, 1 << 6);
 
     std::cout << std::setw(5) << std::left << (1 << pow) << "x" << std::setw(5)
               << std::right << (1 << pow) << "\t\t" << std::setw(15)
               << std::right << (float)tm / 1000.f << " ms" << std::endl;
 
-    tm = benchmark_twiddle_factor_multiplication(q, 1 << pow, 1 << (pow + 1),
-                                                 1 << 6);
+    tm = benchmark_twiddle_factor_multiplication(
+      q, 1 << pow, 1 << (pow + 1), 1 << 6);
 
     std::cout << std::setw(5) << std::left << (1 << pow) << "x" << std::setw(5)
               << std::right << (1 << (pow + 1)) << "\t\t" << std::setw(15)

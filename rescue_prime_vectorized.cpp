@@ -1,6 +1,8 @@
 #include <rescue_prime_vectorized.hpp>
 
-sycl::ulong16 ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b) {
+sycl::ulong16
+ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b)
+{
   sycl::ulong16 ab = a * b;
   sycl::ulong16 cd = sycl::mul_hi(a, b);
   sycl::ulong16 c = cd & MAX_UINT;
@@ -22,7 +24,9 @@ sycl::ulong16 ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b) {
   return tmp_5 + tmp_7;
 }
 
-sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b) {
+sycl::ulong16
+ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b)
+{
   // Following four lines are equivalent of writing
   // b % FIELD_MOD, which converts all lanes of `b` vector
   // into canonical representation
@@ -42,7 +46,9 @@ sycl::ulong16 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b) {
   return tmp_3 + tmp_4;
 }
 
-sycl::ulong16 apply_sbox(sycl::ulong16 state) {
+sycl::ulong16
+apply_sbox(sycl::ulong16 state)
+{
   sycl::ulong16 state2 = ff_p_vec_mul(state, state);
   sycl::ulong16 state4 = ff_p_vec_mul(state2, state2);
   sycl::ulong16 state6 = ff_p_vec_mul(state2, state4);
@@ -50,18 +56,24 @@ sycl::ulong16 apply_sbox(sycl::ulong16 state) {
   return ff_p_vec_mul(state, state6);
 }
 
-sycl::ulong16 apply_constants(sycl::ulong16 state, sycl::ulong16 cnst) {
+sycl::ulong16
+apply_constants(sycl::ulong16 state, sycl::ulong16 cnst)
+{
   return ff_p_vec_add(state, cnst);
 }
 
-sycl::ulong accumulate_vec4(sycl::ulong4 a) {
+sycl::ulong
+accumulate_vec4(sycl::ulong4 a)
+{
   uint64_t v0 = ff_p_add(a.x(), a.y());
   uint64_t v1 = ff_p_add(a.z(), a.w());
 
   return static_cast<sycl::ulong>(ff_p_add(v0, v1));
 }
 
-sycl::ulong accumulate_state(sycl::ulong16 state) {
+sycl::ulong
+accumulate_state(sycl::ulong16 state)
+{
   sycl::ulong8 state_lo = state.lo();
   sycl::ulong8 state_hi = state.hi();
 
@@ -73,7 +85,9 @@ sycl::ulong accumulate_state(sycl::ulong16 state) {
   return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
 }
 
-sycl::ulong16 apply_mds(sycl::ulong16 state, const sycl::ulong16 *mds) {
+sycl::ulong16
+apply_mds(sycl::ulong16 state, const sycl::ulong16* mds)
+{
   sycl::ulong v0 = accumulate_state(ff_p_vec_mul(state, *(mds + 0)));
   sycl::ulong v1 = accumulate_state(ff_p_vec_mul(state, *(mds + 1)));
   sycl::ulong v2 = accumulate_state(ff_p_vec_mul(state, *(mds + 2)));
@@ -89,12 +103,13 @@ sycl::ulong16 apply_mds(sycl::ulong16 state, const sycl::ulong16 *mds) {
 
   // note: last 4 vector lanes don't contribute anyway so, I'm
   // just filling them with 0
-  return sycl::ulong16(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, 0, 0,
-                       0, 0);
+  return sycl::ulong16(
+    v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, 0, 0, 0, 0);
 }
 
-sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
-                      sycl::ulong16 tail) {
+sycl::ulong16
+exp_acc(const sycl::ulong m, sycl::ulong16 base, sycl::ulong16 tail)
+{
   sycl::ulong16 res = base; // just copies all vector lanes
 
   for (sycl::ulong i = 0; i < m; i++) {
@@ -104,7 +119,9 @@ sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
   return ff_p_vec_mul(res, tail);
 }
 
-sycl::ulong16 apply_inv_sbox(sycl::ulong16 state) {
+sycl::ulong16
+apply_inv_sbox(sycl::ulong16 state)
+{
   sycl::ulong16 t1 = ff_p_vec_mul(state, state);
   sycl::ulong16 t2 = ff_p_vec_mul(t1, t1);
 
@@ -123,9 +140,12 @@ sycl::ulong16 apply_inv_sbox(sycl::ulong16 state) {
   return ff_p_vec_mul(a, b);
 }
 
-sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
-                                      const sycl::ulong16 *mds,
-                                      sycl::ulong16 ark1, sycl::ulong16 ark2) {
+sycl::ulong16
+apply_permutation_round(sycl::ulong16 state,
+                        const sycl::ulong16* mds,
+                        sycl::ulong16 ark1,
+                        sycl::ulong16 ark2)
+{
   state = apply_sbox(state);
   state = apply_mds(state, mds);
   state = apply_constants(state, ark1);
@@ -137,49 +157,56 @@ sycl::ulong16 apply_permutation_round(sycl::ulong16 state,
   return state;
 }
 
-sycl::ulong16 apply_rescue_permutation(sycl::ulong16 state,
-                                       const sycl::ulong16 *mds,
-                                       const sycl::ulong16 *ark1,
-                                       const sycl::ulong16 *ark2) {
+sycl::ulong16
+apply_rescue_permutation(sycl::ulong16 state,
+                         const sycl::ulong16* mds,
+                         const sycl::ulong16* ark1,
+                         const sycl::ulong16* ark2)
+{
   for (sycl::ulong i = 0; i < NUM_ROUNDS; i++) {
     state = apply_permutation_round(state, mds, *(ark1 + i), *(ark2 + i));
   }
   return state;
 }
 
-void hash_elements(const sycl::ulong *input_elements, const sycl::ulong count,
-                   sycl::ulong *const hash, const sycl::ulong16 *mds,
-                   const sycl::ulong16 *ark1, const sycl::ulong16 *ark2) {
+void
+hash_elements(const sycl::ulong* input_elements,
+              const sycl::ulong count,
+              sycl::ulong* const hash,
+              const sycl::ulong16* mds,
+              const sycl::ulong16* ark1,
+              const sycl::ulong16* ark2)
+{
   sycl::ulong16 state = sycl::ulong16(0);
   state.sB() = count % FIELD_MOD;
 
   sycl::ulong i = 0;
   for (sycl::ulong j = 0; j < count; j++) {
     switch (i) {
-    case 0:
-      state.s0() = ff_p_add(state.s0(), *(input_elements + j));
-      break;
-    case 1:
-      state.s1() = ff_p_add(state.s1(), *(input_elements + j));
-      break;
-    case 2:
-      state.s2() = ff_p_add(state.s2(), *(input_elements + j));
-      break;
-    case 3:
-      state.s3() = ff_p_add(state.s3(), *(input_elements + j));
-      break;
-    case 4:
-      state.s4() = ff_p_add(state.s4(), *(input_elements + j));
-      break;
-    case 5:
-      state.s5() = ff_p_add(state.s5(), *(input_elements + j));
-      break;
-    case 6:
-      state.s6() = ff_p_add(state.s6(), *(input_elements + j));
-      break;
-    case 7:
-      state.s7() = ff_p_add(state.s7(), *(input_elements + j));
-      break;
+      case 0:
+        state.s0() = ff_p_add(state.s0(), *(input_elements + j));
+        break;
+      case 1:
+        state.s1() = ff_p_add(state.s1(), *(input_elements + j));
+        break;
+      case 2:
+        state.s2() = ff_p_add(state.s2(), *(input_elements + j));
+        break;
+      case 3:
+        state.s3() = ff_p_add(state.s3(), *(input_elements + j));
+        break;
+      case 4:
+        state.s4() = ff_p_add(state.s4(), *(input_elements + j));
+        break;
+      case 5:
+        state.s5() = ff_p_add(state.s5(), *(input_elements + j));
+        break;
+      case 6:
+        state.s6() = ff_p_add(state.s6(), *(input_elements + j));
+        break;
+      case 7:
+        state.s7() = ff_p_add(state.s7(), *(input_elements + j));
+        break;
     }
 
     if ((++i) % RATE_WIDTH == 0) {
@@ -200,37 +227,74 @@ void hash_elements(const sycl::ulong *input_elements, const sycl::ulong count,
   *(hash + 3) = digest.w();
 }
 
-void prepare_mds(sycl::ulong16 *const mds) {
+void
+prepare_mds(sycl::ulong16* const mds)
+{
   for (size_t i = 0; i < STATE_WIDTH; i++) {
-    sycl::ulong16 vec = sycl::ulong16(
-        MDS[i * 16 + 0], MDS[i * 16 + 1], MDS[i * 16 + 2], MDS[i * 16 + 3],
-        MDS[i * 16 + 4], MDS[i * 16 + 5], MDS[i * 16 + 6], MDS[i * 16 + 7],
-        MDS[i * 16 + 8], MDS[i * 16 + 9], MDS[i * 16 + 10], MDS[i * 16 + 11],
-        MDS[i * 16 + 12], MDS[i * 16 + 13], MDS[i * 16 + 14], MDS[i * 16 + 15]);
+    sycl::ulong16 vec = sycl::ulong16(MDS[i * 16 + 0],
+                                      MDS[i * 16 + 1],
+                                      MDS[i * 16 + 2],
+                                      MDS[i * 16 + 3],
+                                      MDS[i * 16 + 4],
+                                      MDS[i * 16 + 5],
+                                      MDS[i * 16 + 6],
+                                      MDS[i * 16 + 7],
+                                      MDS[i * 16 + 8],
+                                      MDS[i * 16 + 9],
+                                      MDS[i * 16 + 10],
+                                      MDS[i * 16 + 11],
+                                      MDS[i * 16 + 12],
+                                      MDS[i * 16 + 13],
+                                      MDS[i * 16 + 14],
+                                      MDS[i * 16 + 15]);
     *(mds + i) = vec;
   }
 }
 
-void prepare_ark1(sycl::ulong16 *const ark1) {
+void
+prepare_ark1(sycl::ulong16* const ark1)
+{
   for (size_t i = 0; i < NUM_ROUNDS; i++) {
-    sycl::ulong16 vec = sycl::ulong16(
-        ARK1[i * 16 + 0], ARK1[i * 16 + 1], ARK1[i * 16 + 2], ARK1[i * 16 + 3],
-        ARK1[i * 16 + 4], ARK1[i * 16 + 5], ARK1[i * 16 + 6], ARK1[i * 16 + 7],
-        ARK1[i * 16 + 8], ARK1[i * 16 + 9], ARK1[i * 16 + 10],
-        ARK1[i * 16 + 11], ARK1[i * 16 + 12], ARK1[i * 16 + 13],
-        ARK1[i * 16 + 14], ARK1[i * 16 + 15]);
+    sycl::ulong16 vec = sycl::ulong16(ARK1[i * 16 + 0],
+                                      ARK1[i * 16 + 1],
+                                      ARK1[i * 16 + 2],
+                                      ARK1[i * 16 + 3],
+                                      ARK1[i * 16 + 4],
+                                      ARK1[i * 16 + 5],
+                                      ARK1[i * 16 + 6],
+                                      ARK1[i * 16 + 7],
+                                      ARK1[i * 16 + 8],
+                                      ARK1[i * 16 + 9],
+                                      ARK1[i * 16 + 10],
+                                      ARK1[i * 16 + 11],
+                                      ARK1[i * 16 + 12],
+                                      ARK1[i * 16 + 13],
+                                      ARK1[i * 16 + 14],
+                                      ARK1[i * 16 + 15]);
     *(ark1 + i) = vec;
   }
 }
 
-void prepare_ark2(sycl::ulong16 *const ark2) {
+void
+prepare_ark2(sycl::ulong16* const ark2)
+{
   for (size_t i = 0; i < NUM_ROUNDS; i++) {
-    sycl::ulong16 vec = sycl::ulong16(
-        ARK2[i * 16 + 0], ARK2[i * 16 + 1], ARK2[i * 16 + 2], ARK2[i * 16 + 3],
-        ARK2[i * 16 + 4], ARK2[i * 16 + 5], ARK2[i * 16 + 6], ARK2[i * 16 + 7],
-        ARK2[i * 16 + 8], ARK2[i * 16 + 9], ARK2[i * 16 + 10],
-        ARK2[i * 16 + 11], ARK2[i * 16 + 12], ARK2[i * 16 + 13],
-        ARK2[i * 16 + 14], ARK2[i * 16 + 15]);
+    sycl::ulong16 vec = sycl::ulong16(ARK2[i * 16 + 0],
+                                      ARK2[i * 16 + 1],
+                                      ARK2[i * 16 + 2],
+                                      ARK2[i * 16 + 3],
+                                      ARK2[i * 16 + 4],
+                                      ARK2[i * 16 + 5],
+                                      ARK2[i * 16 + 6],
+                                      ARK2[i * 16 + 7],
+                                      ARK2[i * 16 + 8],
+                                      ARK2[i * 16 + 9],
+                                      ARK2[i * 16 + 10],
+                                      ARK2[i * 16 + 11],
+                                      ARK2[i * 16 + 12],
+                                      ARK2[i * 16 + 13],
+                                      ARK2[i * 16 + 14],
+                                      ARK2[i * 16 + 15]);
     *(ark2 + i) = vec;
   }
 }

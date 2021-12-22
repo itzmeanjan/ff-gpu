@@ -57,7 +57,7 @@ clean:
 	find . -name '*.o' -o -name 'run' -o -name 'a.out' -o -name '*.gch' -o -name 'test' -o  -name '__pycache__' | xargs rm -rf
 
 format:
-	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
+	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i --style=Mozilla
 
 tests/ff_p.o: ff_p.cpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c $^ -o $@ $(INCLUDES)

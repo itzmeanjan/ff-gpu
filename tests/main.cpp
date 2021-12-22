@@ -4,17 +4,19 @@
 
 using namespace sycl;
 
-int main(int argc, char **argv) {
+int
+main(int argc, char** argv)
+{
 #if defined CPU
-  device d{cpu_selector{}};
+  device d{ cpu_selector{} };
 #elif defined GPU
-  device d{gpu_selector{}};
+  device d{ gpu_selector{} };
 #elif defined HOST
-  device d{host_selector{}};
+  device d{ host_selector{} };
 #else
-  device d{default_selector{}};
+  device d{ default_selector{} };
 #endif
-  queue q{d};
+  queue q{ d };
 
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
             << std::endl;

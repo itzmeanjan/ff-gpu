@@ -1,39 +1,42 @@
 #include "rescue_prime.hpp"
 
-void hash_elements(const uint64_t *elements, const uint64_t count,
-                   uint64_t *const hash) {
-  rescue_prime_state_t state{.f_b = count >= MOD ? count - MOD : count};
+void
+hash_elements(const uint64_t* elements,
+              const uint64_t count,
+              uint64_t* const hash)
+{
+  rescue_prime_state_t state{ .f_b = count >= MOD ? count - MOD : count };
 
   uint64_t i = 0;
   for (uint64_t j = 0; j < count; j++) {
     switch (i) {
-    case 0:
-      state.f_0 = ff_p_add(state.f_0, *(elements + j));
-      break;
-    case 1:
-      state.f_1 = ff_p_add(state.f_1, *(elements + j));
-      break;
-    case 2:
-      state.f_2 = ff_p_add(state.f_2, *(elements + j));
-      break;
-    case 3:
-      state.f_3 = ff_p_add(state.f_3, *(elements + j));
-      break;
-    case 4:
-      state.f_4 = ff_p_add(state.f_4, *(elements + j));
-      break;
-    case 5:
-      state.f_5 = ff_p_add(state.f_5, *(elements + j));
-      break;
-    case 6:
-      state.f_6 = ff_p_add(state.f_6, *(elements + j));
-      break;
-    case 7:
-      state.f_7 = ff_p_add(state.f_7, *(elements + j));
-      break;
-    default:
-      // we should not reach to this condition ever !
-      break;
+      case 0:
+        state.f_0 = ff_p_add(state.f_0, *(elements + j));
+        break;
+      case 1:
+        state.f_1 = ff_p_add(state.f_1, *(elements + j));
+        break;
+      case 2:
+        state.f_2 = ff_p_add(state.f_2, *(elements + j));
+        break;
+      case 3:
+        state.f_3 = ff_p_add(state.f_3, *(elements + j));
+        break;
+      case 4:
+        state.f_4 = ff_p_add(state.f_4, *(elements + j));
+        break;
+      case 5:
+        state.f_5 = ff_p_add(state.f_5, *(elements + j));
+        break;
+      case 6:
+        state.f_6 = ff_p_add(state.f_6, *(elements + j));
+        break;
+      case 7:
+        state.f_7 = ff_p_add(state.f_7, *(elements + j));
+        break;
+      default:
+        // we should not reach to this condition ever !
+        break;
     }
     i++;
     if (i % RATE_WIDTH == 0) {
@@ -52,13 +55,17 @@ void hash_elements(const uint64_t *elements, const uint64_t count,
   *(hash + 3) = state.f_3;
 }
 
-void apply_permutation(rescue_prime_state_t *state) {
+void
+apply_permutation(rescue_prime_state_t* state)
+{
   for (uint64_t i = 0; i < NUM_ROUNDS; i++) {
     apply_round(state, i);
   }
 }
 
-void apply_round(rescue_prime_state_t *state, const uint64_t round) {
+void
+apply_round(rescue_prime_state_t* state, const uint64_t round)
+{
   apply_sbox(state);
   apply_mds(state);
   apply_constants(state, ARK1[round]);
@@ -68,7 +75,9 @@ void apply_round(rescue_prime_state_t *state, const uint64_t round) {
   apply_constants(state, ARK2[round]);
 }
 
-void apply_sbox(rescue_prime_state_t *state) {
+void
+apply_sbox(rescue_prime_state_t* state)
+{
   uint64_t t2 = 0ul, t4 = 0ul;
 
   t2 = ff_p_mult(state->f_0, state->f_0);
@@ -120,8 +129,10 @@ void apply_sbox(rescue_prime_state_t *state) {
   state->f_b = ff_p_mult(state->f_b, ff_p_mult(t2, t4));
 }
 
-uint64_t element_wise_accumulation(rescue_prime_state_t *state_a,
-                                   rescue_prime_state_t state_b) {
+uint64_t
+element_wise_accumulation(rescue_prime_state_t* state_a,
+                          rescue_prime_state_t state_b)
+{
   uint64_t res = 0ul;
 
   res = ff_p_add(res, ff_p_mult(state_a->f_0, state_b.f_0));
@@ -140,7 +151,9 @@ uint64_t element_wise_accumulation(rescue_prime_state_t *state_a,
   return res;
 }
 
-void apply_mds(rescue_prime_state_t *state) {
+void
+apply_mds(rescue_prime_state_t* state)
+{
   rescue_prime_state_t res;
 
   res.f_0 = element_wise_accumulation(state, MDS[0]);
@@ -170,7 +183,9 @@ void apply_mds(rescue_prime_state_t *state) {
   state->f_b = res.f_b;
 }
 
-void apply_constants(rescue_prime_state_t *state, rescue_prime_state_t ark) {
+void
+apply_constants(rescue_prime_state_t* state, rescue_prime_state_t ark)
+{
   state->f_0 = ff_p_add(state->f_0, ark.f_0);
   state->f_1 = ff_p_add(state->f_1, ark.f_1);
   state->f_2 = ff_p_add(state->f_2, ark.f_2);
@@ -185,9 +200,11 @@ void apply_constants(rescue_prime_state_t *state, rescue_prime_state_t ark) {
   state->f_b = ff_p_add(state->f_b, ark.f_b);
 }
 
-void element_wise_multiplication(rescue_prime_state_t *state_src_a,
-                                 rescue_prime_state_t *state_src_b,
-                                 rescue_prime_state_t *state_dst) {
+void
+element_wise_multiplication(rescue_prime_state_t* state_src_a,
+                            rescue_prime_state_t* state_src_b,
+                            rescue_prime_state_t* state_dst)
+{
   state_dst->f_0 = ff_p_mult(state_src_a->f_0, state_src_b->f_0);
   state_dst->f_1 = ff_p_mult(state_src_a->f_1, state_src_b->f_1);
   state_dst->f_2 = ff_p_mult(state_src_a->f_2, state_src_b->f_2);
@@ -204,7 +221,9 @@ void element_wise_multiplication(rescue_prime_state_t *state_src_a,
   state_dst->f_b = ff_p_mult(state_src_a->f_b, state_src_b->f_b);
 }
 
-void apply_inv_sbox(rescue_prime_state_t *state) {
+void
+apply_inv_sbox(rescue_prime_state_t* state)
+{
   rescue_prime_state_t t1;
   element_wise_multiplication(state, state, &t1);
 
@@ -302,8 +321,12 @@ void apply_inv_sbox(rescue_prime_state_t *state) {
   state->f_b = ff_p_mult(a, b);
 }
 
-void exp_acc(const uint64_t m, rescue_prime_state_t *base,
-             rescue_prime_state_t *tail, rescue_prime_state_t *res) {
+void
+exp_acc(const uint64_t m,
+        rescue_prime_state_t* base,
+        rescue_prime_state_t* tail,
+        rescue_prime_state_t* res)
+{
   for (uint64_t i = 0; i < m; i++) {
     if (i == 0) {
       element_wise_multiplication(base, base, res);

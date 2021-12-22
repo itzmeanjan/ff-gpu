@@ -1,12 +1,26 @@
 #include "ff.hpp"
 
-uint32_t ff_add(const uint32_t a, const uint32_t b) { return a ^ b; }
+uint32_t
+ff_add(const uint32_t a, const uint32_t b)
+{
+  return a ^ b;
+}
 
-uint32_t ff_sub(const uint32_t a, const uint32_t b) { return a ^ b; }
+uint32_t
+ff_sub(const uint32_t a, const uint32_t b)
+{
+  return a ^ b;
+}
 
-uint32_t ff_neg(const uint32_t a) { return a; }
+uint32_t
+ff_neg(const uint32_t a)
+{
+  return a;
+}
 
-uint32_t ff_mult(const uint32_t a, const uint32_t b) {
+uint32_t
+ff_mult(const uint32_t a, const uint32_t b)
+{
   uint64_t a_ = a;
   uint32_t b_ = b;
   uint32_t c = 0;
@@ -32,7 +46,9 @@ uint32_t ff_mult(const uint32_t a, const uint32_t b) {
   return c;
 }
 
-uint32_t ff_inv(const uint32_t a) {
+uint32_t
+ff_inv(const uint32_t a)
+{
   if (a == 0) {
     // ** no multiplicative inverse of additive identity **
     //
@@ -59,7 +75,9 @@ uint32_t ff_inv(const uint32_t a) {
   return res;
 }
 
-uint32_t ff_div(const uint32_t a, const uint32_t b) {
+uint32_t
+ff_div(const uint32_t a, const uint32_t b)
+{
   if (b == 0) {
     // ** no multiplicative inverse of additive identity **
     //
@@ -77,7 +95,9 @@ uint32_t ff_div(const uint32_t a, const uint32_t b) {
   return res;
 }
 
-uint32_t ff_pow(const uint32_t a, const int32_t b) {
+uint32_t
+ff_pow(const uint32_t a, const int32_t b)
+{
   if (a == 0 && b < 0) {
     // ** no multiplicative inverse of additive identity **
     //

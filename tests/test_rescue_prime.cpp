@@ -1,6 +1,8 @@
 #include "test_rescue_prime.hpp"
 
-void test_alphas(sycl::queue &q) {
+void
+test_alphas(sycl::queue& q)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
@@ -11,11 +13,13 @@ void test_alphas(sycl::queue &q) {
   assert(e == operate(q, e_exp, INV_ALPHA, Op::power));
 }
 
-void test_sbox(sycl::queue &q) {
-  rescue_prime_state_t *arr_0 = (rescue_prime_state_t *)sycl::malloc_shared(
-      sizeof(rescue_prime_state_t), q);
-  rescue_prime_state_t *arr_1 = (rescue_prime_state_t *)sycl::malloc_shared(
-      sizeof(rescue_prime_state_t), q);
+void
+test_sbox(sycl::queue& q)
+{
+  rescue_prime_state_t* arr_0 =
+    (rescue_prime_state_t*)sycl::malloc_shared(sizeof(rescue_prime_state_t), q);
+  rescue_prime_state_t* arr_1 =
+    (rescue_prime_state_t*)sycl::malloc_shared(sizeof(rescue_prime_state_t), q);
 
   random_rescue_prime_state(arr_0);
   q.memcpy(arr_1, arr_0, sizeof(rescue_prime_state_t)).wait();
@@ -50,7 +54,9 @@ void test_sbox(sycl::queue &q) {
   assert(arr_0->f_b == arr_1->f_b);
 }
 
-void random_rescue_prime_state(rescue_prime_state_t *arr) {
+void
+random_rescue_prime_state(rescue_prime_state_t* arr)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
@@ -71,11 +77,13 @@ void random_rescue_prime_state(rescue_prime_state_t *arr) {
   arr->f_b = dis(gen) % MOD;
 }
 
-void test_inv_sbox(sycl::queue &q) {
-  rescue_prime_state_t *arr_0 = (rescue_prime_state_t *)sycl::malloc_shared(
-      sizeof(rescue_prime_state_t), q);
-  rescue_prime_state_t *arr_1 = (rescue_prime_state_t *)sycl::malloc_shared(
-      sizeof(rescue_prime_state_t), q);
+void
+test_inv_sbox(sycl::queue& q)
+{
+  rescue_prime_state_t* arr_0 =
+    (rescue_prime_state_t*)sycl::malloc_shared(sizeof(rescue_prime_state_t), q);
+  rescue_prime_state_t* arr_1 =
+    (rescue_prime_state_t*)sycl::malloc_shared(sizeof(rescue_prime_state_t), q);
 
   random_rescue_prime_state(arr_0);
   q.memcpy(arr_1, arr_0, sizeof(rescue_prime_state_t)).wait();
@@ -110,16 +118,18 @@ void test_inv_sbox(sycl::queue &q) {
   assert(arr_0->f_b == arr_1->f_b);
 }
 
-void test_permutation(sycl::queue &q) {
-  rescue_prime_state_t *state = (rescue_prime_state_t *)sycl::malloc_shared(
-      sizeof(rescue_prime_state_t), q);
+void
+test_permutation(sycl::queue& q)
+{
+  rescue_prime_state_t* state =
+    (rescue_prime_state_t*)sycl::malloc_shared(sizeof(rescue_prime_state_t), q);
   rescue_prime_state_t expected = {
-      10809974140050983728ull % MOD, 6938491977181280539ull % MOD,
-      8834525837561071698ull % MOD,  6854417192438540779ull % MOD,
-      4476630872663101667ull % MOD,  6292749486700362097ull % MOD,
-      18386622366690620454ull % MOD, 10614098972800193173ull % MOD,
-      7543273285584849722ull % MOD,  9490898458612615694ull % MOD,
-      9030271581669113292ull % MOD,  10101107035874348250ull % MOD,
+    10809974140050983728ull % MOD, 6938491977181280539ull % MOD,
+    8834525837561071698ull % MOD,  6854417192438540779ull % MOD,
+    4476630872663101667ull % MOD,  6292749486700362097ull % MOD,
+    18386622366690620454ull % MOD, 10614098972800193173ull % MOD,
+    7543273285584849722ull % MOD,  9490898458612615694ull % MOD,
+    9030271581669113292ull % MOD,  10101107035874348250ull % MOD,
   };
 
   state->f_0 = 0;
