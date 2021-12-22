@@ -76,3 +76,11 @@ SYCL_EXTERNAL sycl::ulong accumulate_state(sycl::ulong16 state);
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L201-L231
 SYCL_EXTERNAL sycl::ulong16 apply_mds(sycl::ulong16 state,
                                       sycl::ulong16 mds[12]);
+
+// Instead of exponentiating hash state by some large number, this function
+// helps in computing exponentiation by performing multiple modular
+// multiplications
+//
+// This is invoked from following `apply_inv_sbox` function ( multiple times )
+SYCL_EXTERNAL sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
+                                    sycl::ulong16 tail);

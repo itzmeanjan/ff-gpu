@@ -92,3 +92,14 @@ sycl::ulong16 apply_mds(sycl::ulong16 state, sycl::ulong16 mds[12]) {
   return sycl::ulong16(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, 0, 0,
                        0, 0);
 }
+
+sycl::ulong16 exp_acc(const sycl::ulong m, sycl::ulong16 base,
+                      sycl::ulong16 tail) {
+  sycl::ulong16 res = base; // just copies all vector lanes
+
+  for (sycl::ulong i = 0; i < m; i++) {
+    res = ff_p_vec_mul(res, res);
+  }
+
+  return ff_p_vec_mul(res, tail);
+}
