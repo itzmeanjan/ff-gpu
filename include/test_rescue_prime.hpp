@@ -1,7 +1,7 @@
 #pragma once
+#include "rescue_prime.hpp"
 #include "test.hpp"
 #include <iostream>
-#include <rescue_prime_vectorized.hpp>
 
 inline constexpr uint64_t ALPHA = 7ull;
 inline constexpr uint64_t INV_ALPHA = 10540996611094048183ull;
