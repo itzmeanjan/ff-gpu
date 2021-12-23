@@ -82,7 +82,7 @@ main(int argc, char** argv)
   std::cout << std::setw(10) << "dimension"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = B; dim <= (1ul << 23); dim <<= 1) {
+  for (uint dim = 1ul << 16; dim <= (1ul << 23); dim <<= 1) {
     int64_t tm = benchmark_cooley_tukey_fft(q, dim, B);
 
     std::cout << std::setw(8) << std::right << dim << "\t\t" << std::setw(15)
@@ -94,7 +94,7 @@ main(int argc, char** argv)
   std::cout << std::setw(10) << "dimension"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = B; dim <= (1ul << 23); dim <<= 1) {
+  for (uint dim = 1ul << 16; dim <= (1ul << 23); dim <<= 1) {
     int64_t tm = benchmark_cooley_tukey_ifft(q, dim, B);
 
     std::cout << std::setw(8) << std::right << dim << "\t\t" << std::setw(15)
@@ -106,7 +106,7 @@ main(int argc, char** argv)
   std::cout << std::setw(11) << "dimension"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = 12; dim <= 24; dim++) {
+  for (uint dim = 16; dim <= 24; dim++) {
     int64_t tm = benchmark_six_step_fft(q, 1ul << dim, 1 << 6);
 
     std::cout << std::setw(9) << std::right << (1ul << dim) << "\t\t"
@@ -119,7 +119,7 @@ main(int argc, char** argv)
   std::cout << std::setw(11) << "dimension"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = 12; dim <= 24; dim++) {
+  for (uint dim = 16; dim <= 24; dim++) {
     int64_t tm = benchmark_six_step_ifft(q, 1ul << dim, 1 << 6);
 
     std::cout << std::setw(9) << std::right << (1ul << dim) << "\t\t"
