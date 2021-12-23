@@ -88,7 +88,7 @@ check_ntt_correctness(sycl::queue& q,
               uint64_t,
               sycl::ext::oneapi::memory_order::relaxed,
               sycl::memory_scope::device,
-              sycl::access::address_space::global_device_space>
+              sycl::access::address_space::ext_intel_global_device_space>
               corr_ref{ acc_mismatch[0] };
             corr_ref.fetch_add((r == c ? v == dim : v == 0) ? 0 : 1);
           });
@@ -161,7 +161,7 @@ check_ntt_forward_inverse_transform(sycl::queue& q,
               uint64_t,
               sycl::ext::oneapi::memory_order::relaxed,
               sycl::memory_scope::device,
-              sycl::access::address_space::global_device_space>
+              sycl::access::address_space::ext_intel_global_device_space>
               corr_ref{ acc_mismatch[0] };
             corr_ref.fetch_add(
               acc_vec_src[r] % MOD == acc_vec_inv[r] % MOD ? 0 : 1);
@@ -221,7 +221,7 @@ check_cooley_tukey_ntt(sycl::queue& q,
               uint64_t,
               sycl::ext::oneapi::memory_order::relaxed,
               sycl::memory_scope::device,
-              sycl::access::address_space::global_device_space>
+              sycl::access::address_space::ext_intel_global_device_space>
               corr_ref{ acc_mismatch[0] };
             corr_ref.fetch_add(
               acc_vec_src[r] % MOD == acc_vec_inv[r] % MOD ? 0 : 1);
@@ -265,20 +265,20 @@ check_matrix_transposition(sycl::queue& q,
       buf_1d_u64_rw_t acc_mismatch{ buf_mismatch, h };
 
       h.depends_on({ evt_2 });
-      h.parallel_for(sycl::nd_range<2>{ sycl::range<2>{ dim, dim },
-                                        sycl::range<2>{ 1, wg_size } },
-                     [=](sycl::nd_item<2> it) {
-                       const size_t l_idx = it.get_global_linear_id();
+      h.parallel_for(
+        sycl::nd_range<2>{ sycl::range<2>{ dim, dim },
+                           sycl::range<2>{ 1, wg_size } },
+        [=](sycl::nd_item<2> it) {
+          const size_t l_idx = it.get_global_linear_id();
 
-                       sycl::ext::oneapi::atomic_ref<
-                         uint64_t,
-                         sycl::ext::oneapi::memory_order::relaxed,
-                         sycl::memory_scope::device,
-                         sycl::access::address_space::global_device_space>
-                         corr_ref{ acc_mismatch[0] };
-                       corr_ref.fetch_add(
-                         *(vec_d + l_idx) == *(vec_s + l_idx) ? 0 : 1);
-                     });
+          sycl::ext::oneapi::atomic_ref<
+            uint64_t,
+            sycl::ext::oneapi::memory_order::relaxed,
+            sycl::memory_scope::device,
+            sycl::access::address_space::ext_intel_global_device_space>
+            corr_ref{ acc_mismatch[0] };
+          corr_ref.fetch_add(*(vec_d + l_idx) == *(vec_s + l_idx) ? 0 : 1);
+        });
     });
     evt_3.wait();
   }
@@ -333,7 +333,7 @@ test_compute_twiddles(sycl::queue& q,
             uint64_t,
             sycl::ext::oneapi::memory_order::relaxed,
             sycl::memory_scope::device,
-            sycl::access::address_space::global_device_space>
+            sycl::access::address_space::ext_intel_global_device_space>
             corr_ref{ acc_mismatch[0] };
           corr_ref.fetch_add(
             *(twiddles + l_idx) % MOD == ff_p_pow(*omega, l_idx) % MOD ? 0 : 1);
@@ -419,7 +419,7 @@ test_twiddle_factor_multiplication(sycl::queue& q,
             uint64_t,
             sycl::ext::oneapi::memory_order::relaxed,
             sycl::memory_scope::device,
-            sycl::access::address_space::global_device_space>
+            sycl::access::address_space::ext_intel_global_device_space>
             corr_ref{ acc_mismatch[0] };
           corr_ref.fetch_add(
             *(vec_d + r * n + c) % MOD ==
@@ -481,7 +481,7 @@ test_six_step_fft(sycl::queue& q, const uint64_t dim, const uint64_t wg_size)
               uint64_t,
               sycl::ext::oneapi::memory_order::relaxed,
               sycl::memory_scope::device,
-              sycl::access::address_space::global_device_space>
+              sycl::access::address_space::ext_intel_global_device_space>
               corr_ref{ acc_mismatch[0] };
             corr_ref.fetch_add(
               acc_vec_fwd[r] % MOD == *(vec_dev + r) % MOD ? 0 : 1);
@@ -541,7 +541,7 @@ test_six_step_ifft(sycl::queue& q, const uint64_t dim, const uint64_t wg_size)
               uint64_t,
               sycl::ext::oneapi::memory_order::relaxed,
               sycl::memory_scope::device,
-              sycl::access::address_space::global_device_space>
+              sycl::access::address_space::ext_intel_global_device_space>
               corr_ref{ acc_mismatch[0] };
             corr_ref.fetch_add(
               acc_vec_inv[r] % MOD == *(vec_dev + r) % MOD ? 0 : 1);
@@ -600,7 +600,7 @@ test_six_step_fft_and_ifft(sycl::queue& q,
             uint64_t,
             sycl::ext::oneapi::memory_order::relaxed,
             sycl::memory_scope::device,
-            sycl::access::address_space::global_device_space>
+            sycl::access::address_space::ext_intel_global_device_space>
             corr_ref{ acc_mismatch[0] };
           corr_ref.fetch_add(*(vec_inv + r) % MOD == *(vec_src + r) % MOD ? 0
                                                                           : 1);
