@@ -1,6 +1,7 @@
 CXX = clang++
 CXXFLAGS = -std=c++17 -Wall
-SYCLFLAGS = -fsycl -fsycl-default-sub-group-size 32
+SYCLFLAGS = -fsycl
+SYCLSGFLAGS = -fsycl-default-sub-group-size 32
 SYCLCUDAFLAGS = -fsycl -fsycl-targets=nvptx64-nvidia-cuda
 INCLUDES = -I./include
 PROG = run
@@ -98,16 +99,16 @@ aot_cpu:
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c utils.cpp -o utils.o $(INCLUDES)
 	@if lscpu | grep -q 'avx512'; then \
 		echo "Using avx512"; \
-		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice -Xs "-march=avx512" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
+		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(SYCLSGFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64 -Xs "-march=avx512" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
 	elif lscpu | grep -q 'avx2'; then \
 		echo "Using avx2"; \
-		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice -Xs "-march=avx2" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
+		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(SYCLSGFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64 -Xs "-march=avx2" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
 	elif lscpu | grep -q 'avx'; then \
 		echo "Using avx"; \
-		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice -Xs "-march=avx" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
+		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(SYCLSGFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64 -Xs "-march=avx" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
 	elif lscpu | grep -q 'sse4.2'; then \
 		echo "Using sse4.2"; \
-		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice -Xs "-march=sse4.2" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
+		$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(SYCLSGFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_x86_64 -Xs "-march=sse4.2" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o; \
 	else \
 		echo "Can't AOT compile using avx, avx2, avx512 or sse4.2"; \
 	fi
@@ -115,7 +116,7 @@ aot_cpu:
 aot_gpu:
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c main.cpp -o main.o $(INCLUDES)
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c utils.cpp -o utils.o $(INCLUDES)
-	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs "-device 0x4905" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(SYCLSGFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_gen -Xs "-device 0x4905" ff.cpp bench_ff.cpp ff_p.cpp bench_ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp utils.o main.o
 
 cuda:
 	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c main.cpp -o main.o $(DFLAGS)
