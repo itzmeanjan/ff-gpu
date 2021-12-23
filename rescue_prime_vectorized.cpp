@@ -30,8 +30,8 @@ ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b)
   // Following four lines are equivalent of writing
   // b % FIELD_MOD, which converts all lanes of `b` vector
   // into canonical representation
-  sycl::ulong16 mod_vec = sycl::ulong16(FIELD_MOD);
-  sycl::long16 over_0 = b >= FIELD_MOD;
+  sycl::ulong16 mod_vec = sycl::ulong16(MOD);
+  sycl::long16 over_0 = b >= MOD;
   sycl::ulong16 tmp_0 = (over_0.convert<ulong>() >> 63) * mod_vec;
   sycl::ulong16 b_ok = b - tmp_0;
 
@@ -178,7 +178,7 @@ hash_elements(const sycl::ulong* input_elements,
               const sycl::ulong16* ark2)
 {
   sycl::ulong16 state = sycl::ulong16(0);
-  state.sB() = count % FIELD_MOD;
+  state.sB() = count % MOD;
 
   sycl::ulong i = 0;
   for (sycl::ulong j = 0; j < count; j++) {
