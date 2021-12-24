@@ -228,6 +228,40 @@ hash_elements(const sycl::ulong* input_elements,
 }
 
 void
+merge(const sycl::ulong* input_hashes,
+      sycl::ulong* const merged_hash,
+      const sycl::ulong16* mds,
+      const sycl::ulong16* ark1,
+      const sycl::ulong16* ark2)
+{
+  sycl::ulong16 state = sycl::ulong16(*(input_hashes + 0),
+                                      *(input_hashes + 1),
+                                      *(input_hashes + 2),
+                                      *(input_hashes + 3),
+                                      *(input_hashes + 4),
+                                      *(input_hashes + 5),
+                                      *(input_hashes + 6),
+                                      *(input_hashes + 7),
+                                      0,
+                                      0,
+                                      0,
+                                      RATE_WIDTH,
+                                      0,
+                                      0,
+                                      0,
+                                      0);
+
+  state = apply_rescue_permutation(state, mds, ark1, ark2);
+
+  sycl::ulong4 digest = static_cast<sycl::ulong4>(state.swizzle<0, 1, 2, 3>());
+
+  *(merged_hash + 0) = digest.x();
+  *(merged_hash + 1) = digest.y();
+  *(merged_hash + 2) = digest.z();
+  *(merged_hash + 3) = digest.w();
+}
+
+void
 prepare_mds(sycl::ulong16* const mds)
 {
   for (size_t i = 0; i < STATE_WIDTH; i++) {

@@ -147,6 +147,24 @@ hash_elements(const sycl::ulong* input_elements,
               const sycl::ulong16* ark1,
               const sycl::ulong16* ark2);
 
+// Merges two rescue prime digests into single digest of width 256 -bit
+//
+// `input_hashes` parameter should be pointer to memory location, where 8
+// consequtive prime field elements can be found, 8 because two rescue prime
+// hashes contiguously stored
+//
+// `merged_hash` parameter should be pointing to 256 -bit wide memory allocation
+// where four field elements to be written
+//
+// Adapted from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/77e371ef2fb11ba7d7369005a60a0888393729f0/kernel.cl#L424-L474
+SYCL_EXTERNAL void
+merge(const sycl::ulong* input_hashes,
+      sycl::ulong* const merged_hash,
+      const sycl::ulong16* mds,
+      const sycl::ulong16* ark1,
+      const sycl::ulong16* ark2);
+
 // Stores MDS matrix in kernel expected form i.e. each row of matrix inside
 // vector with 16 lanes
 void
