@@ -11,7 +11,7 @@ merklize(sycl::queue& q,
          const sycl::ulong16* ark2)
 {
   // ensure only working with powers of 2 -many leaves
-  assert(leaf_count & (leaf_count) == 0);
+  assert((leaf_count & (leaf_count - 1)) == 0);
   assert(wg_size <= (leaf_count >> 2));
 
   // so that only last half of tree is touched, where
