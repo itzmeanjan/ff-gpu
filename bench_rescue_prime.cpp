@@ -1,7 +1,7 @@
 #include "bench_rescue_prime.hpp"
 #include "rescue_prime.hpp"
 
-int64_t
+uint64_t
 benchmark_hash_elements(sycl::queue& q,
                         const uint32_t dim,
                         const uint32_t wg_size,
@@ -41,9 +41,6 @@ benchmark_hash_elements(sycl::queue& q,
   sycl::event evt_3 =
     q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
 
-  using tp = std::chrono::_V2::high_resolution_clock::time_point;
-  tp start = std::chrono::high_resolution_clock::now();
-
   sycl::event evt_4 = q.submit([&](sycl::handler& h) {
     h.depends_on({ evt_0, evt_1, evt_2, evt_3 });
     h.parallel_for<class kernelBenchmarkRescuePrimeHash>(
@@ -59,7 +56,10 @@ benchmark_hash_elements(sycl::queue& q,
   });
   evt_4.wait();
 
-  tp end = std::chrono::high_resolution_clock::now();
+  uint64_t start =
+    evt_4.get_profiling_info<sycl::info::event_profiling::command_start>();
+  uint64_t end =
+    evt_4.get_profiling_info<sycl::info::event_profiling::command_end>();
 
   sycl::free(elements, q);
   sycl::free(hashes, q);
@@ -70,11 +70,10 @@ benchmark_hash_elements(sycl::queue& q,
   sycl::free(ark1_d, q);
   sycl::free(ark2_d, q);
 
-  return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-    .count();
+  return (end - start);
 }
 
-int64_t
+uint64_t
 benchmark_merge(sycl::queue& q,
                 const uint32_t dim,
                 const uint32_t wg_size,
@@ -114,9 +113,6 @@ benchmark_merge(sycl::queue& q,
   sycl::event evt_3 =
     q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
 
-  using tp = std::chrono::_V2::high_resolution_clock::time_point;
-  tp start = std::chrono::high_resolution_clock::now();
-
   sycl::event evt_4 = q.submit([&](sycl::handler& h) {
     h.depends_on({ evt_0, evt_1, evt_2, evt_3 });
     h.parallel_for<class kernelBenchmarkRescuePrimeMergeHashes>(
@@ -132,7 +128,10 @@ benchmark_merge(sycl::queue& q,
   });
   evt_4.wait();
 
-  tp end = std::chrono::high_resolution_clock::now();
+  uint64_t start =
+    evt_4.get_profiling_info<sycl::info::event_profiling::command_start>();
+  uint64_t end =
+    evt_4.get_profiling_info<sycl::info::event_profiling::command_end>();
 
   sycl::free(input_hashes, q);
   sycl::free(merged_hashes, q);
@@ -143,6 +142,5 @@ benchmark_merge(sycl::queue& q,
   sycl::free(ark1_d, q);
   sycl::free(ark2_d, q);
 
-  return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-    .count();
+  return (end - start); // in nanoseconds
 }
