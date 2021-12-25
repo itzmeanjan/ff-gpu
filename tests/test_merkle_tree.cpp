@@ -41,44 +41,59 @@ test_merklize(sycl::queue& q)
   // host sychronization in function itself !
   merklize(q, leaves, intermediates_a, leaf_count, 2, mds, ark1, ark2);
 
-  // manually compute merkle root !
-  q.single_task([=]() {
-     for (size_t idx = 0; idx < (leaf_count >> 1); idx++) {
-       merge(leaves + idx * (DIGEST_SIZE >> 1),
-             intermediates_b + ((leaf_count >> 1) + idx) * DIGEST_SIZE,
-             mds,
-             ark1,
-             ark2);
-     }
+  {
+    const size_t output_offset = leaf_count >> 1;
 
-     for (size_t idx = 0; idx < (leaf_count >> 2); idx++) {
-       merge(intermediates_b + (leaf_count >> 1) * DIGEST_SIZE +
-               idx * (DIGEST_SIZE >> 1),
-             intermediates_b + ((leaf_count >> 2) + idx) * DIGEST_SIZE,
-             mds,
-             ark1,
-             ark2);
-     }
+    sycl::event evt_0 = q.submit([&](sycl::handler& h) {
+      h.parallel_for<class kernelMerklizeRescuePrimePhase0Test>(
+        sycl::nd_range<1>{ sycl::range<1>{ output_offset },
+                           sycl::range<1>{ output_offset } },
+        [=](sycl::nd_item<1> it) {
+          const size_t idx = it.get_global_linear_id();
 
-     for (size_t idx = 0; idx < (leaf_count >> 3); idx++) {
-       merge(intermediates_b + (leaf_count >> 2) * DIGEST_SIZE +
-               idx * (DIGEST_SIZE >> 1),
-             intermediates_b + ((leaf_count >> 3) + idx) * DIGEST_SIZE,
-             mds,
-             ark1,
-             ark2);
-     }
+          merge(leaves + idx * (DIGEST_SIZE >> 1),
+                intermediates_b + (output_offset + idx) * DIGEST_SIZE,
+                mds,
+                ark1,
+                ark2);
+        });
+    });
 
-     for (size_t idx = 0; idx < (leaf_count >> 4); idx++) {
-       merge(intermediates_b + (leaf_count >> 3) * DIGEST_SIZE +
-               idx * (DIGEST_SIZE >> 1),
-             intermediates_b + ((leaf_count >> 4) + idx) * DIGEST_SIZE,
-             mds,
-             ark1,
-             ark2);
-     }
-   })
-    .wait();
+    // manually compute merkle root !
+    sycl::event evt_1 = q.submit([&](sycl::handler& h) {
+      h.depends_on(evt_0);
+      h.single_task([=]() {
+        for (size_t idx = 0; idx < (leaf_count >> 2); idx++) {
+          merge(intermediates_b + (leaf_count >> 1) * DIGEST_SIZE +
+                  idx * (DIGEST_SIZE >> 1),
+                intermediates_b + ((leaf_count >> 2) + idx) * DIGEST_SIZE,
+                mds,
+                ark1,
+                ark2);
+        }
+
+        for (size_t idx = 0; idx < (leaf_count >> 3); idx++) {
+          merge(intermediates_b + (leaf_count >> 2) * DIGEST_SIZE +
+                  idx * (DIGEST_SIZE >> 1),
+                intermediates_b + ((leaf_count >> 3) + idx) * DIGEST_SIZE,
+                mds,
+                ark1,
+                ark2);
+        }
+
+        for (size_t idx = 0; idx < (leaf_count >> 4); idx++) {
+          merge(intermediates_b + (leaf_count >> 3) * DIGEST_SIZE +
+                  idx * (DIGEST_SIZE >> 1),
+                intermediates_b + ((leaf_count >> 4) + idx) * DIGEST_SIZE,
+                mds,
+                ark1,
+                ark2);
+        }
+      });
+    });
+
+    evt_1.wait();
+  }
 
   // asserting that first digest in interemediate node holding
   // allocation is never touched !
