@@ -25,8 +25,8 @@ merklize(sycl::queue& q,
       [=](sycl::nd_item<1> it) {
         const size_t idx = it.get_global_linear_id();
 
-        merge(leaves + (idx >> 1) * (DIGEST_SIZE >> 1),
-              intermediates + output_offset + idx * DIGEST_SIZE,
+        merge(leaves + idx * (DIGEST_SIZE >> 1),
+              intermediates + (output_offset + idx) * DIGEST_SIZE,
               mds,
               ark1,
               ark2);
@@ -64,8 +64,9 @@ merklize(sycl::queue& q,
         [=](sycl::nd_item<1> it) {
           const size_t idx = it.get_global_linear_id();
 
-          merge(intermediates + (offset >> 1) + (idx >> 1) * (DIGEST_SIZE >> 1),
-                intermediates + offset + idx * DIGEST_SIZE,
+          merge(intermediates + (offset << 1) * DIGEST_SIZE +
+                  idx * (DIGEST_SIZE >> 1),
+                intermediates + (offset + idx) * DIGEST_SIZE,
                 mds,
                 ark1,
                 ark2);
@@ -78,10 +79,10 @@ merklize(sycl::queue& q,
 
           while ((1 << (round - 1)) < loc_size) {
             if (idx % (1 << round) == 0) {
-              merge(intermediates + (offset >> (round - 1)) +
-                      (idx >> (round - 1)) * (DIGEST_SIZE >> 1),
-                    intermediates + (offset >> round) +
-                      (idx >> round) * DIGEST_SIZE,
+              merge(intermediates + (offset >> (round - 1)) * DIGEST_SIZE +
+                      (idx >> round) * (DIGEST_SIZE >> 1),
+                    intermediates +
+                      ((offset >> round) + (idx >> round)) * DIGEST_SIZE,
                     mds,
                     ark1,
                     ark2);
