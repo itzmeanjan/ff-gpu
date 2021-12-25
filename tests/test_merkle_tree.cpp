@@ -41,6 +41,8 @@ test_merklize(sycl::queue& q)
   // host sychronization in function itself !
   merklize(q, leaves, intermediates_a, leaf_count, 2, mds, ark1, ark2);
 
+  // following block manually computes merkle root
+  // for asserting result produced by original merklization kernel
   {
     const size_t output_offset = leaf_count >> 1;
 
@@ -59,44 +61,78 @@ test_merklize(sycl::queue& q)
         });
     });
 
-    // manually compute merkle root !
-    sycl::event evt_1 = q.submit([&](sycl::handler& h) {
-      h.depends_on(evt_0);
-      h.single_task([=]() {
-        for (size_t idx = 0; idx < (leaf_count >> 2); idx++) {
-          merge(intermediates_b + (leaf_count >> 1) * DIGEST_SIZE +
-                  idx * (DIGEST_SIZE >> 1),
-                intermediates_b + ((leaf_count >> 2) + idx) * DIGEST_SIZE,
-                mds,
-                ark1,
-                ark2);
+    const size_t rounds =
+      static_cast<size_t>(sycl::log2(static_cast<double>(leaf_count >> 1)));
+
+    std::vector<sycl::event> evts;
+    evts.reserve(rounds);
+
+    for (size_t r = 0; r < rounds; r++) {
+      sycl::event evt = q.submit([&](sycl::handler& h) {
+        if (r == 0) {
+          h.depends_on(evt_0);
+        } else {
+          h.depends_on(evts.at(r - 1));
         }
 
-        for (size_t idx = 0; idx < (leaf_count >> 3); idx++) {
-          merge(intermediates_b + (leaf_count >> 2) * DIGEST_SIZE +
-                  idx * (DIGEST_SIZE >> 1),
-                intermediates_b + ((leaf_count >> 3) + idx) * DIGEST_SIZE,
-                mds,
-                ark1,
-                ark2);
-        }
+        const size_t offset = leaf_count >> (r + 2);
 
-        for (size_t idx = 0; idx < (leaf_count >> 4); idx++) {
-          merge(intermediates_b + (leaf_count >> 3) * DIGEST_SIZE +
-                  idx * (DIGEST_SIZE >> 1),
-                intermediates_b + ((leaf_count >> 4) + idx) * DIGEST_SIZE,
-                mds,
-                ark1,
-                ark2);
-        }
+        h.parallel_for<class kernelMerklizeRescuePrimePhase1Test>(
+          sycl::nd_range<1>{ sycl::range<1>{ offset },
+                             sycl::range<1>{ offset } },
+          [=](sycl::nd_item<1> it) {
+            const size_t idx = it.get_global_linear_id();
+
+            merge(intermediates_b + (offset << 1) * DIGEST_SIZE +
+                    idx * (DIGEST_SIZE >> 1),
+                  intermediates_b + (offset + idx) * DIGEST_SIZE,
+                  mds,
+                  ark1,
+                  ark2);
+          });
       });
-    });
+      evts.push_back(evt);
+    }
 
-    evt_1.wait();
+    evts.at(rounds - 1).wait();
+
+    // sycl::event evt_1 = q.submit([&](sycl::handler& h) {
+    //   h.depends_on(evt_0);
+    //   h.single_task([=]() {
+    //     for (size_t idx = 0; idx < (leaf_count >> 2); idx++) {
+    //       merge(intermediates_b + (leaf_count >> 1) * DIGEST_SIZE +
+    //               idx * (DIGEST_SIZE >> 1),
+    //             intermediates_b + ((leaf_count >> 2) + idx) * DIGEST_SIZE,
+    //             mds,
+    //             ark1,
+    //             ark2);
+    //     }
+
+    //     for (size_t idx = 0; idx < (leaf_count >> 3); idx++) {
+    //       merge(intermediates_b + (leaf_count >> 2) * DIGEST_SIZE +
+    //               idx * (DIGEST_SIZE >> 1),
+    //             intermediates_b + ((leaf_count >> 3) + idx) * DIGEST_SIZE,
+    //             mds,
+    //             ark1,
+    //             ark2);
+    //     }
+
+    //     for (size_t idx = 0; idx < (leaf_count >> 4); idx++) {
+    //       merge(intermediates_b + (leaf_count >> 3) * DIGEST_SIZE +
+    //               idx * (DIGEST_SIZE >> 1),
+    //             intermediates_b + ((leaf_count >> 4) + idx) * DIGEST_SIZE,
+    //             mds,
+    //             ark1,
+    //             ark2);
+    //     }
+    //   });
+    // });
+
+    // evt_1.wait();
   }
 
-  // asserting that first digest in interemediate node holding
-  // allocation is never touched !
+  // asserting that first digest in interemediate node holder
+  // memory allocation is never touched !
   //
   // four consequtive memory locations are checked because
   // each rescue prime digest has width of 256 -bit which is
@@ -105,6 +141,14 @@ test_merklize(sycl::queue& q)
   assert(*(intermediates_a + 1) == 0);
   assert(*(intermediates_a + 2) == 0);
   assert(*(intermediates_a + 3) == 0);
+
+  // same as above, this done just to ensure that assertion kernel
+  // never touches first four field elements, because it's never
+  // desired/ required to be touched
+  assert(*(intermediates_b + 0) == 0);
+  assert(*(intermediates_b + 1) == 0);
+  assert(*(intermediates_b + 2) == 0);
+  assert(*(intermediates_b + 3) == 0);
 
   // check that root of merkle tree matches when computed
   // using actual kernel ( which is being tested ) with
