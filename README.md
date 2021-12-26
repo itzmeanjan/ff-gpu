@@ -119,6 +119,7 @@ I run benchmark suite on both **Intel CPU/ GPU** and **Nvidia GPU**, keeping res
     - [(Inverse) Number Theoretic Transform on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_ntt.md)
         - Cooley-Tukey (I)FFT
         - Six Step Algorithm (I)FFT
+    - [Merkel Tree Construction](benchmarks/cuda_merkle_tree.md)
 
 ## Tests
 

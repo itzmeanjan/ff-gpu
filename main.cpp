@@ -81,7 +81,7 @@ main(int argc, char** argv)
   std::cout << "\nMerklize ( approach 1 ) using Rescue Prime on F(2**64 - "
                "2**32 + 1) elements 👇\n"
             << std::endl;
-  std::cout << std::setw(11) << "dimension"
+  std::cout << std::setw(11) << "leaves"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
   for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
@@ -95,7 +95,7 @@ main(int argc, char** argv)
   std::cout << "\nMerklize ( approach 2 ) using Rescue Prime on F(2**64 - "
                "2**32 + 1) elements 👇\n"
             << std::endl;
-  std::cout << std::setw(11) << "dimension"
+  std::cout << std::setw(11) << "leaves"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
   for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
