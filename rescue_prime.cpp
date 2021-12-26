@@ -1,316 +1,334 @@
-#include "rescue_prime.hpp"
+#include <rescue_prime.hpp>
 
-void hash_elements(const uint64_t *elements, const uint64_t count,
-                   uint64_t *const hash) {
-  rescue_prime_state_t state{.f_b = count >= MOD ? count - MOD : count};
+sycl::ulong16
+ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b)
+{
+  sycl::ulong16 ab = a * b;
+  sycl::ulong16 cd = sycl::mul_hi(a, b);
+  sycl::ulong16 c = cd & MAX_UINT;
+  sycl::ulong16 d = cd >> 32;
 
-  uint64_t i = 0;
-  for (uint64_t j = 0; j < count; j++) {
+  sycl::ulong16 tmp_0 = ab - d;
+  sycl::long16 und_0 = ab < d; // check if underflowed
+  sycl::ulong16 tmp_1 = und_0.convert<ulong>();
+  sycl::ulong16 tmp_2 = tmp_1 & MAX_UINT;
+  sycl::ulong16 tmp_3 = tmp_0 - tmp_2;
+
+  sycl::ulong16 tmp_4 = (c << 32) - c;
+
+  sycl::ulong16 tmp_5 = tmp_3 + tmp_4;
+  sycl::long16 ovr_0 = tmp_3 > std::numeric_limits<uint64_t>::max() - tmp_4;
+  sycl::ulong16 tmp_6 = ovr_0.convert<ulong>();
+  sycl::ulong16 tmp_7 = tmp_6 & MAX_UINT;
+
+  return tmp_5 + tmp_7;
+}
+
+sycl::ulong16
+ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b)
+{
+  // Following four lines are equivalent of writing
+  // b % FIELD_MOD, which converts all lanes of `b` vector
+  // into canonical representation
+  sycl::ulong16 mod_vec = sycl::ulong16(MOD);
+  sycl::long16 over_0 = b >= MOD;
+  sycl::ulong16 tmp_0 = (over_0.convert<ulong>() >> 63) * mod_vec;
+  sycl::ulong16 b_ok = b - tmp_0;
+
+  sycl::ulong16 tmp_1 = a + b_ok;
+  sycl::long16 over_1 = a > (std::numeric_limits<uint64_t>::max() - b_ok);
+  sycl::ulong16 tmp_2 = over_1.convert<ulong>() & MAX_UINT;
+
+  sycl::ulong16 tmp_3 = tmp_1 + tmp_2;
+  sycl::long16 over_2 = tmp_1 > (std::numeric_limits<uint64_t>::max() - tmp_2);
+  sycl::ulong16 tmp_4 = over_2.convert<ulong>() & MAX_UINT;
+
+  return tmp_3 + tmp_4;
+}
+
+sycl::ulong16
+apply_sbox(sycl::ulong16 state)
+{
+  sycl::ulong16 state2 = ff_p_vec_mul(state, state);
+  sycl::ulong16 state4 = ff_p_vec_mul(state2, state2);
+  sycl::ulong16 state6 = ff_p_vec_mul(state2, state4);
+
+  return ff_p_vec_mul(state, state6);
+}
+
+sycl::ulong16
+apply_constants(sycl::ulong16 state, sycl::ulong16 cnst)
+{
+  return ff_p_vec_add(state, cnst);
+}
+
+sycl::ulong
+accumulate_vec4(sycl::ulong4 a)
+{
+  uint64_t v0 = ff_p_add(a.x(), a.y());
+  uint64_t v1 = ff_p_add(a.z(), a.w());
+
+  return static_cast<sycl::ulong>(ff_p_add(v0, v1));
+}
+
+sycl::ulong
+accumulate_state(sycl::ulong16 state)
+{
+  sycl::ulong8 state_lo = state.lo();
+  sycl::ulong8 state_hi = state.hi();
+
+  sycl::ulong v0 = accumulate_vec4(state_lo.lo());
+  sycl::ulong v1 = accumulate_vec4(state_lo.hi());
+  sycl::ulong v2 = accumulate_vec4(state_hi.lo());
+  sycl::ulong v3 = accumulate_vec4(state_hi.hi());
+
+  return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
+}
+
+sycl::ulong16
+apply_mds(sycl::ulong16 state, const sycl::ulong16* mds)
+{
+  sycl::ulong v0 = accumulate_state(ff_p_vec_mul(state, *(mds + 0)));
+  sycl::ulong v1 = accumulate_state(ff_p_vec_mul(state, *(mds + 1)));
+  sycl::ulong v2 = accumulate_state(ff_p_vec_mul(state, *(mds + 2)));
+  sycl::ulong v3 = accumulate_state(ff_p_vec_mul(state, *(mds + 3)));
+  sycl::ulong v4 = accumulate_state(ff_p_vec_mul(state, *(mds + 4)));
+  sycl::ulong v5 = accumulate_state(ff_p_vec_mul(state, *(mds + 5)));
+  sycl::ulong v6 = accumulate_state(ff_p_vec_mul(state, *(mds + 6)));
+  sycl::ulong v7 = accumulate_state(ff_p_vec_mul(state, *(mds + 7)));
+  sycl::ulong v8 = accumulate_state(ff_p_vec_mul(state, *(mds + 8)));
+  sycl::ulong v9 = accumulate_state(ff_p_vec_mul(state, *(mds + 9)));
+  sycl::ulong v10 = accumulate_state(ff_p_vec_mul(state, *(mds + 10)));
+  sycl::ulong v11 = accumulate_state(ff_p_vec_mul(state, *(mds + 11)));
+
+  // note: last 4 vector lanes don't contribute anyway so, I'm
+  // just filling them with 0
+  return sycl::ulong16(
+    v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, 0, 0, 0, 0);
+}
+
+sycl::ulong16
+exp_acc(const sycl::ulong m, sycl::ulong16 base, sycl::ulong16 tail)
+{
+  sycl::ulong16 res = base; // just copies all vector lanes
+
+  for (sycl::ulong i = 0; i < m; i++) {
+    res = ff_p_vec_mul(res, res);
+  }
+
+  return ff_p_vec_mul(res, tail);
+}
+
+sycl::ulong16
+apply_inv_sbox(sycl::ulong16 state)
+{
+  sycl::ulong16 t1 = ff_p_vec_mul(state, state);
+  sycl::ulong16 t2 = ff_p_vec_mul(t1, t1);
+
+  sycl::ulong16 t3 = exp_acc(3, t2, t2);
+  sycl::ulong16 t4 = exp_acc(6, t3, t3);
+  t4 = exp_acc(12, t4, t4);
+
+  sycl::ulong16 t5 = exp_acc(6, t4, t3);
+  sycl::ulong16 t6 = exp_acc(31, t5, t5);
+
+  sycl::ulong16 a = ff_p_vec_mul(ff_p_vec_mul(t6, t6), t5);
+  a = ff_p_vec_mul(a, a);
+  a = ff_p_vec_mul(a, a);
+  sycl::ulong16 b = ff_p_vec_mul(ff_p_vec_mul(t1, t2), state);
+
+  return ff_p_vec_mul(a, b);
+}
+
+sycl::ulong16
+apply_permutation_round(sycl::ulong16 state,
+                        const sycl::ulong16* mds,
+                        sycl::ulong16 ark1,
+                        sycl::ulong16 ark2)
+{
+  state = apply_sbox(state);
+  state = apply_mds(state, mds);
+  state = apply_constants(state, ark1);
+
+  state = apply_inv_sbox(state);
+  state = apply_mds(state, mds);
+  state = apply_constants(state, ark2);
+
+  return state;
+}
+
+sycl::ulong16
+apply_rescue_permutation(sycl::ulong16 state,
+                         const sycl::ulong16* mds,
+                         const sycl::ulong16* ark1,
+                         const sycl::ulong16* ark2)
+{
+  for (sycl::ulong i = 0; i < NUM_ROUNDS; i++) {
+    state = apply_permutation_round(state, mds, *(ark1 + i), *(ark2 + i));
+  }
+  return state;
+}
+
+void
+hash_elements(const sycl::ulong* input_elements,
+              const sycl::ulong count,
+              sycl::ulong* const hash,
+              const sycl::ulong16* mds,
+              const sycl::ulong16* ark1,
+              const sycl::ulong16* ark2)
+{
+  sycl::ulong16 state = sycl::ulong16(0);
+  state.sB() = count % MOD;
+
+  sycl::ulong i = 0;
+  for (sycl::ulong j = 0; j < count; j++) {
     switch (i) {
-    case 0:
-      state.f_0 = ff_p_add(state.f_0, *(elements + j));
-      break;
-    case 1:
-      state.f_1 = ff_p_add(state.f_1, *(elements + j));
-      break;
-    case 2:
-      state.f_2 = ff_p_add(state.f_2, *(elements + j));
-      break;
-    case 3:
-      state.f_3 = ff_p_add(state.f_3, *(elements + j));
-      break;
-    case 4:
-      state.f_4 = ff_p_add(state.f_4, *(elements + j));
-      break;
-    case 5:
-      state.f_5 = ff_p_add(state.f_5, *(elements + j));
-      break;
-    case 6:
-      state.f_6 = ff_p_add(state.f_6, *(elements + j));
-      break;
-    case 7:
-      state.f_7 = ff_p_add(state.f_7, *(elements + j));
-      break;
-    default:
-      // we should not reach to this condition ever !
-      break;
+      case 0:
+        state.s0() = ff_p_add(state.s0(), *(input_elements + j));
+        break;
+      case 1:
+        state.s1() = ff_p_add(state.s1(), *(input_elements + j));
+        break;
+      case 2:
+        state.s2() = ff_p_add(state.s2(), *(input_elements + j));
+        break;
+      case 3:
+        state.s3() = ff_p_add(state.s3(), *(input_elements + j));
+        break;
+      case 4:
+        state.s4() = ff_p_add(state.s4(), *(input_elements + j));
+        break;
+      case 5:
+        state.s5() = ff_p_add(state.s5(), *(input_elements + j));
+        break;
+      case 6:
+        state.s6() = ff_p_add(state.s6(), *(input_elements + j));
+        break;
+      case 7:
+        state.s7() = ff_p_add(state.s7(), *(input_elements + j));
+        break;
     }
-    i++;
-    if (i % RATE_WIDTH == 0) {
-      apply_permutation(&state);
+
+    if ((++i) % RATE_WIDTH == 0) {
+      state = apply_rescue_permutation(state, mds, ark1, ark2);
       i = 0;
     }
   }
 
   if (i > 0) {
-    apply_permutation(&state);
+    state = apply_rescue_permutation(state, mds, ark1, ark2);
   }
 
-  *(hash + 0) = state.f_0;
-  *(hash + 1) = state.f_1;
-  *(hash + 2) = state.f_2;
-  *(hash + 3) = state.f_3;
+  sycl::ulong4 digest = static_cast<sycl::ulong4>(state.swizzle<0, 1, 2, 3>());
+
+  *(hash + 0) = digest.x();
+  *(hash + 1) = digest.y();
+  *(hash + 2) = digest.z();
+  *(hash + 3) = digest.w();
 }
 
-void apply_permutation(rescue_prime_state_t *state) {
-  for (uint64_t i = 0; i < NUM_ROUNDS; i++) {
-    apply_round(state, i);
+void
+merge(const sycl::ulong* input_hashes,
+      sycl::ulong* const merged_hash,
+      const sycl::ulong16* mds,
+      const sycl::ulong16* ark1,
+      const sycl::ulong16* ark2)
+{
+  sycl::ulong16 state = sycl::ulong16(*(input_hashes + 0),
+                                      *(input_hashes + 1),
+                                      *(input_hashes + 2),
+                                      *(input_hashes + 3),
+                                      *(input_hashes + 4),
+                                      *(input_hashes + 5),
+                                      *(input_hashes + 6),
+                                      *(input_hashes + 7),
+                                      0,
+                                      0,
+                                      0,
+                                      RATE_WIDTH,
+                                      0,
+                                      0,
+                                      0,
+                                      0);
+
+  state = apply_rescue_permutation(state, mds, ark1, ark2);
+
+  sycl::ulong4 digest = static_cast<sycl::ulong4>(state.swizzle<0, 1, 2, 3>());
+
+  *(merged_hash + 0) = digest.x();
+  *(merged_hash + 1) = digest.y();
+  *(merged_hash + 2) = digest.z();
+  *(merged_hash + 3) = digest.w();
+}
+
+void
+prepare_mds(sycl::ulong16* const mds)
+{
+  for (size_t i = 0; i < STATE_WIDTH; i++) {
+    sycl::ulong16 vec = sycl::ulong16(MDS[i * 16 + 0],
+                                      MDS[i * 16 + 1],
+                                      MDS[i * 16 + 2],
+                                      MDS[i * 16 + 3],
+                                      MDS[i * 16 + 4],
+                                      MDS[i * 16 + 5],
+                                      MDS[i * 16 + 6],
+                                      MDS[i * 16 + 7],
+                                      MDS[i * 16 + 8],
+                                      MDS[i * 16 + 9],
+                                      MDS[i * 16 + 10],
+                                      MDS[i * 16 + 11],
+                                      MDS[i * 16 + 12],
+                                      MDS[i * 16 + 13],
+                                      MDS[i * 16 + 14],
+                                      MDS[i * 16 + 15]);
+    *(mds + i) = vec;
   }
 }
 
-void apply_round(rescue_prime_state_t *state, const uint64_t round) {
-  apply_sbox(state);
-  apply_mds(state);
-  apply_constants(state, ARK1[round]);
-
-  apply_inv_sbox(state);
-  apply_mds(state);
-  apply_constants(state, ARK2[round]);
-}
-
-void apply_sbox(rescue_prime_state_t *state) {
-  uint64_t t2 = 0ul, t4 = 0ul;
-
-  t2 = ff_p_mult(state->f_0, state->f_0);
-  t4 = ff_p_mult(t2, t2);
-  state->f_0 = ff_p_mult(state->f_0, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_1, state->f_1);
-  t4 = ff_p_mult(t2, t2);
-  state->f_1 = ff_p_mult(state->f_1, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_2, state->f_2);
-  t4 = ff_p_mult(t2, t2);
-  state->f_2 = ff_p_mult(state->f_2, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_3, state->f_3);
-  t4 = ff_p_mult(t2, t2);
-  state->f_3 = ff_p_mult(state->f_3, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_4, state->f_4);
-  t4 = ff_p_mult(t2, t2);
-  state->f_4 = ff_p_mult(state->f_4, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_5, state->f_5);
-  t4 = ff_p_mult(t2, t2);
-  state->f_5 = ff_p_mult(state->f_5, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_6, state->f_6);
-  t4 = ff_p_mult(t2, t2);
-  state->f_6 = ff_p_mult(state->f_6, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_7, state->f_7);
-  t4 = ff_p_mult(t2, t2);
-  state->f_7 = ff_p_mult(state->f_7, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_8, state->f_8);
-  t4 = ff_p_mult(t2, t2);
-  state->f_8 = ff_p_mult(state->f_8, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_9, state->f_9);
-  t4 = ff_p_mult(t2, t2);
-  state->f_9 = ff_p_mult(state->f_9, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_a, state->f_a);
-  t4 = ff_p_mult(t2, t2);
-  state->f_a = ff_p_mult(state->f_a, ff_p_mult(t2, t4));
-
-  t2 = ff_p_mult(state->f_b, state->f_b);
-  t4 = ff_p_mult(t2, t2);
-  state->f_b = ff_p_mult(state->f_b, ff_p_mult(t2, t4));
-}
-
-uint64_t element_wise_accumulation(rescue_prime_state_t *state_a,
-                                   rescue_prime_state_t state_b) {
-  uint64_t res = 0ul;
-
-  res = ff_p_add(res, ff_p_mult(state_a->f_0, state_b.f_0));
-  res = ff_p_add(res, ff_p_mult(state_a->f_1, state_b.f_1));
-  res = ff_p_add(res, ff_p_mult(state_a->f_2, state_b.f_2));
-  res = ff_p_add(res, ff_p_mult(state_a->f_3, state_b.f_3));
-  res = ff_p_add(res, ff_p_mult(state_a->f_4, state_b.f_4));
-  res = ff_p_add(res, ff_p_mult(state_a->f_5, state_b.f_5));
-  res = ff_p_add(res, ff_p_mult(state_a->f_6, state_b.f_6));
-  res = ff_p_add(res, ff_p_mult(state_a->f_7, state_b.f_7));
-  res = ff_p_add(res, ff_p_mult(state_a->f_8, state_b.f_8));
-  res = ff_p_add(res, ff_p_mult(state_a->f_9, state_b.f_9));
-  res = ff_p_add(res, ff_p_mult(state_a->f_a, state_b.f_a));
-  res = ff_p_add(res, ff_p_mult(state_a->f_b, state_b.f_b));
-
-  return res;
-}
-
-void apply_mds(rescue_prime_state_t *state) {
-  rescue_prime_state_t res;
-
-  res.f_0 = element_wise_accumulation(state, MDS[0]);
-  res.f_1 = element_wise_accumulation(state, MDS[1]);
-  res.f_2 = element_wise_accumulation(state, MDS[2]);
-  res.f_3 = element_wise_accumulation(state, MDS[3]);
-  res.f_4 = element_wise_accumulation(state, MDS[4]);
-  res.f_5 = element_wise_accumulation(state, MDS[5]);
-  res.f_6 = element_wise_accumulation(state, MDS[6]);
-  res.f_7 = element_wise_accumulation(state, MDS[7]);
-  res.f_8 = element_wise_accumulation(state, MDS[8]);
-  res.f_9 = element_wise_accumulation(state, MDS[9]);
-  res.f_a = element_wise_accumulation(state, MDS[10]);
-  res.f_b = element_wise_accumulation(state, MDS[11]);
-
-  state->f_0 = res.f_0;
-  state->f_1 = res.f_1;
-  state->f_2 = res.f_2;
-  state->f_3 = res.f_3;
-  state->f_4 = res.f_4;
-  state->f_5 = res.f_5;
-  state->f_6 = res.f_6;
-  state->f_7 = res.f_7;
-  state->f_8 = res.f_8;
-  state->f_9 = res.f_9;
-  state->f_a = res.f_a;
-  state->f_b = res.f_b;
-}
-
-void apply_constants(rescue_prime_state_t *state, rescue_prime_state_t ark) {
-  state->f_0 = ff_p_add(state->f_0, ark.f_0);
-  state->f_1 = ff_p_add(state->f_1, ark.f_1);
-  state->f_2 = ff_p_add(state->f_2, ark.f_2);
-  state->f_3 = ff_p_add(state->f_3, ark.f_3);
-  state->f_4 = ff_p_add(state->f_4, ark.f_4);
-  state->f_5 = ff_p_add(state->f_5, ark.f_5);
-  state->f_6 = ff_p_add(state->f_6, ark.f_6);
-  state->f_7 = ff_p_add(state->f_7, ark.f_7);
-  state->f_8 = ff_p_add(state->f_8, ark.f_8);
-  state->f_9 = ff_p_add(state->f_9, ark.f_9);
-  state->f_a = ff_p_add(state->f_a, ark.f_a);
-  state->f_b = ff_p_add(state->f_b, ark.f_b);
-}
-
-void element_wise_multiplication(rescue_prime_state_t *state_src_a,
-                                 rescue_prime_state_t *state_src_b,
-                                 rescue_prime_state_t *state_dst) {
-  state_dst->f_0 = ff_p_mult(state_src_a->f_0, state_src_b->f_0);
-  state_dst->f_1 = ff_p_mult(state_src_a->f_1, state_src_b->f_1);
-  state_dst->f_2 = ff_p_mult(state_src_a->f_2, state_src_b->f_2);
-  state_dst->f_3 = ff_p_mult(state_src_a->f_3, state_src_b->f_3);
-
-  state_dst->f_4 = ff_p_mult(state_src_a->f_4, state_src_b->f_4);
-  state_dst->f_5 = ff_p_mult(state_src_a->f_5, state_src_b->f_5);
-  state_dst->f_6 = ff_p_mult(state_src_a->f_6, state_src_b->f_6);
-  state_dst->f_7 = ff_p_mult(state_src_a->f_7, state_src_b->f_7);
-
-  state_dst->f_8 = ff_p_mult(state_src_a->f_8, state_src_b->f_8);
-  state_dst->f_9 = ff_p_mult(state_src_a->f_9, state_src_b->f_9);
-  state_dst->f_a = ff_p_mult(state_src_a->f_a, state_src_b->f_a);
-  state_dst->f_b = ff_p_mult(state_src_a->f_b, state_src_b->f_b);
-}
-
-void apply_inv_sbox(rescue_prime_state_t *state) {
-  rescue_prime_state_t t1;
-  element_wise_multiplication(state, state, &t1);
-
-  rescue_prime_state_t t2;
-  element_wise_multiplication(&t1, &t1, &t2);
-
-  rescue_prime_state_t t3;
-  exp_acc(3, &t2, &t2, &t3);
-
-  rescue_prime_state_t t4;
-  exp_acc(6, &t3, &t3, &t4);
-
-  rescue_prime_state_t tmp;
-  exp_acc(12, &t4, &t4, &tmp);
-
-  rescue_prime_state_t t5;
-  exp_acc(6, &tmp, &t3, &t5);
-
-  rescue_prime_state_t t6;
-  exp_acc(31, &t5, &t5, &t6);
-
-  // declare one time, use same registers multiple times
-  uint64_t a = 0ul, b = 0ul;
-
-  a = ff_p_mult(t5.f_0, ff_p_mult(t6.f_0, t6.f_0));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_0, ff_p_mult(t1.f_0, t2.f_0));
-  state->f_0 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_1, ff_p_mult(t6.f_1, t6.f_1));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_1, ff_p_mult(t1.f_1, t2.f_1));
-  state->f_1 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_2, ff_p_mult(t6.f_2, t6.f_2));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_2, ff_p_mult(t1.f_2, t2.f_2));
-  state->f_2 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_3, ff_p_mult(t6.f_3, t6.f_3));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_3, ff_p_mult(t1.f_3, t2.f_3));
-  state->f_3 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_4, ff_p_mult(t6.f_4, t6.f_4));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_4, ff_p_mult(t1.f_4, t2.f_4));
-  state->f_4 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_5, ff_p_mult(t6.f_5, t6.f_5));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_5, ff_p_mult(t1.f_5, t2.f_5));
-  state->f_5 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_6, ff_p_mult(t6.f_6, t6.f_6));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_6, ff_p_mult(t1.f_6, t2.f_6));
-  state->f_6 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_7, ff_p_mult(t6.f_7, t6.f_7));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_7, ff_p_mult(t1.f_7, t2.f_7));
-  state->f_7 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_8, ff_p_mult(t6.f_8, t6.f_8));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_8, ff_p_mult(t1.f_8, t2.f_8));
-  state->f_8 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_9, ff_p_mult(t6.f_9, t6.f_9));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_9, ff_p_mult(t1.f_9, t2.f_9));
-  state->f_9 = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_a, ff_p_mult(t6.f_a, t6.f_a));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_a, ff_p_mult(t1.f_a, t2.f_a));
-  state->f_a = ff_p_mult(a, b);
-
-  a = ff_p_mult(t5.f_b, ff_p_mult(t6.f_b, t6.f_b));
-  a = ff_p_mult(a, a);
-  a = ff_p_mult(a, a);
-  b = ff_p_mult(state->f_b, ff_p_mult(t1.f_b, t2.f_b));
-  state->f_b = ff_p_mult(a, b);
-}
-
-void exp_acc(const uint64_t m, rescue_prime_state_t *base,
-             rescue_prime_state_t *tail, rescue_prime_state_t *res) {
-  for (uint64_t i = 0; i < m; i++) {
-    if (i == 0) {
-      element_wise_multiplication(base, base, res);
-    } else {
-      element_wise_multiplication(res, res, res);
-    }
+void
+prepare_ark1(sycl::ulong16* const ark1)
+{
+  for (size_t i = 0; i < NUM_ROUNDS; i++) {
+    sycl::ulong16 vec = sycl::ulong16(ARK1[i * 16 + 0],
+                                      ARK1[i * 16 + 1],
+                                      ARK1[i * 16 + 2],
+                                      ARK1[i * 16 + 3],
+                                      ARK1[i * 16 + 4],
+                                      ARK1[i * 16 + 5],
+                                      ARK1[i * 16 + 6],
+                                      ARK1[i * 16 + 7],
+                                      ARK1[i * 16 + 8],
+                                      ARK1[i * 16 + 9],
+                                      ARK1[i * 16 + 10],
+                                      ARK1[i * 16 + 11],
+                                      ARK1[i * 16 + 12],
+                                      ARK1[i * 16 + 13],
+                                      ARK1[i * 16 + 14],
+                                      ARK1[i * 16 + 15]);
+    *(ark1 + i) = vec;
   }
+}
 
-  element_wise_multiplication(res, tail, res);
+void
+prepare_ark2(sycl::ulong16* const ark2)
+{
+  for (size_t i = 0; i < NUM_ROUNDS; i++) {
+    sycl::ulong16 vec = sycl::ulong16(ARK2[i * 16 + 0],
+                                      ARK2[i * 16 + 1],
+                                      ARK2[i * 16 + 2],
+                                      ARK2[i * 16 + 3],
+                                      ARK2[i * 16 + 4],
+                                      ARK2[i * 16 + 5],
+                                      ARK2[i * 16 + 6],
+                                      ARK2[i * 16 + 7],
+                                      ARK2[i * 16 + 8],
+                                      ARK2[i * 16 + 9],
+                                      ARK2[i * 16 + 10],
+                                      ARK2[i * 16 + 11],
+                                      ARK2[i * 16 + 12],
+                                      ARK2[i * 16 + 13],
+                                      ARK2[i * 16 + 14],
+                                      ARK2[i * 16 + 15]);
+    *(ark2 + i) = vec;
+  }
 }

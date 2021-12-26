@@ -1,37 +1,40 @@
 #include "test.hpp"
 
-uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2,
-                 Op op) {
+uint64_t
+operate(sycl::queue& q, uint64_t operand_1, uint64_t operand_2, Op op)
+{
   uint64_t res = 0;
 
   {
-    sycl::buffer<uint64_t, 1> buf{&res, sycl::range<1>{1}};
+    sycl::buffer<uint64_t, 1> buf{ &res, sycl::range<1>{ 1 } };
 
-    q.submit([&](sycl::handler &h) {
-      sycl::accessor<uint64_t, 1, sycl::access::mode::write,
+    q.submit([&](sycl::handler& h) {
+      sycl::accessor<uint64_t,
+                     1,
+                     sycl::access::mode::write,
                      sycl::access::target::global_buffer>
-          acc{buf, h};
+        acc{ buf, h };
 
       h.single_task([=]() {
         switch (op) {
-        case add:
-          acc[0] = ff_p_add(operand_1, operand_2);
-          break;
-        case sub:
-          acc[0] = ff_p_sub(operand_1, operand_2);
-          break;
-        case mult:
-          acc[0] = ff_p_mult(operand_1, operand_2);
-          break;
-        case power:
-          acc[0] = ff_p_pow(operand_1, operand_2);
-          break;
-        case inverse:
-          acc[0] = ff_p_inv(operand_1);
-          break;
-        case division:
-          acc[0] = ff_p_div(operand_1, operand_2);
-          break;
+          case add:
+            acc[0] = ff_p_add(operand_1, operand_2);
+            break;
+          case sub:
+            acc[0] = ff_p_sub(operand_1, operand_2);
+            break;
+          case mult:
+            acc[0] = ff_p_mult(operand_1, operand_2);
+            break;
+          case power:
+            acc[0] = ff_p_pow(operand_1, operand_2);
+            break;
+          case inverse:
+            acc[0] = ff_p_inv(operand_1);
+            break;
+          case division:
+            acc[0] = ff_p_div(operand_1, operand_2);
+            break;
         }
       });
     });
@@ -41,7 +44,9 @@ uint64_t operate(sycl::queue &q, uint64_t operand_1, uint64_t operand_2,
   return res % MOD;
 }
 
-void test_addition(sycl::queue &q) {
+void
+test_addition(sycl::queue& q)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
@@ -60,7 +65,9 @@ void test_addition(sycl::queue &q) {
   assert(t_2 == operate(q, t_1, 0xffffffff, Op::add));
 }
 
-void test_subtraction(sycl::queue &q) {
+void
+test_subtraction(sycl::queue& q)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
@@ -84,8 +91,9 @@ void test_subtraction(sycl::queue &q) {
   }
 }
 
-uint64_t multiply_with_addition(sycl::queue &q, const uint64_t a,
-                                const uint64_t b) {
+uint64_t
+multiply_with_addition(sycl::queue& q, const uint64_t a, const uint64_t b)
+{
   uint64_t a_ = 0;
   for (uint64_t i = 0; i < b; i++) {
     a_ = operate(q, a, a_, Op::add);
@@ -93,7 +101,9 @@ uint64_t multiply_with_addition(sycl::queue &q, const uint64_t a,
   return a_;
 }
 
-void test_multiplication(sycl::queue &q) {
+void
+test_multiplication(sycl::queue& q)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
@@ -120,8 +130,11 @@ void test_multiplication(sycl::queue &q) {
   }
 }
 
-uint64_t exponentiate_with_multiplication(sycl::queue &q, const uint64_t a,
-                                          const uint64_t b) {
+uint64_t
+exponentiate_with_multiplication(sycl::queue& q,
+                                 const uint64_t a,
+                                 const uint64_t b)
+{
   if (b == 0) {
     return 1;
   }
@@ -133,7 +146,9 @@ uint64_t exponentiate_with_multiplication(sycl::queue &q, const uint64_t a,
   return a_;
 }
 
-void test_power(sycl::queue &q) {
+void
+test_power(sycl::queue& q)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
@@ -156,7 +171,9 @@ void test_power(sycl::queue &q) {
   }
 }
 
-void test_inversion(sycl::queue &q) {
+void
+test_inversion(sycl::queue& q)
+{
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);

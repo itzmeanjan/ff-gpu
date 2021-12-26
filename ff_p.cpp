@@ -1,7 +1,9 @@
 #include "ff_p.hpp"
 #include <climits>
 
-uint64_t ff_p_add(uint64_t a, uint64_t b) {
+uint64_t
+ff_p_add(uint64_t a, uint64_t b)
+{
   if (b >= MOD) {
     b -= MOD;
   }
@@ -21,7 +23,9 @@ uint64_t ff_p_add(uint64_t a, uint64_t b) {
   return res;
 }
 
-uint64_t ff_p_sub(uint64_t a, uint64_t b) {
+uint64_t
+ff_p_sub(uint64_t a, uint64_t b)
+{
   if (b >= MOD) {
     b -= MOD;
   }
@@ -41,7 +45,9 @@ uint64_t ff_p_sub(uint64_t a, uint64_t b) {
   return res;
 }
 
-uint64_t ff_p_mult(uint64_t a, uint64_t b) {
+uint64_t
+ff_p_mult(uint64_t a, uint64_t b)
+{
   if (b >= MOD) {
     b -= MOD;
   }
@@ -69,7 +75,9 @@ uint64_t ff_p_mult(uint64_t a, uint64_t b) {
   return res;
 }
 
-uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
+uint64_t
+ff_p_pow(uint64_t a, const uint64_t b)
+{
   if (b == 0) {
     return 1;
   }
@@ -92,7 +100,9 @@ uint64_t ff_p_pow(uint64_t a, const uint64_t b) {
   return r;
 }
 
-uint64_t ff_p_inv(uint64_t a) {
+uint64_t
+ff_p_inv(uint64_t a)
+{
   if (a >= MOD) {
     a -= MOD;
   }
@@ -110,7 +120,9 @@ uint64_t ff_p_inv(uint64_t a) {
   return ff_p_pow(a, exp);
 }
 
-uint64_t ff_p_div(uint64_t a, uint64_t b) {
+uint64_t
+ff_p_div(uint64_t a, uint64_t b)
+{
   if (b == 0) {
     // ** no multiplicative inverse of additive identity **
     //

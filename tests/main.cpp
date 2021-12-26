@@ -1,20 +1,23 @@
 #include "test.hpp"
+#include "test_merkle_tree.hpp"
 #include "test_ntt.hpp"
 #include "test_rescue_prime.hpp"
 
 using namespace sycl;
 
-int main(int argc, char **argv) {
+int
+main(int argc, char** argv)
+{
 #if defined CPU
-  device d{cpu_selector{}};
+  device d{ cpu_selector{} };
 #elif defined GPU
-  device d{gpu_selector{}};
+  device d{ gpu_selector{} };
 #elif defined HOST
-  device d{host_selector{}};
+  device d{ host_selector{} };
 #else
-  device d{default_selector{}};
+  device d{ default_selector{} };
 #endif
-  queue q{d};
+  queue q{ d, { sycl::property::queue::enable_profiling() } };
 
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
             << std::endl;
@@ -35,6 +38,9 @@ int main(int argc, char **argv) {
   test_inv_sbox(q);
   test_permutation(q);
   std::cout << "✅ passed rescue prime tests" << std::endl;
+
+  test_merklize(q);
+  std::cout << "✅ passed merkle tree tests" << std::endl;
 
   check_ntt_correctness(q, 1 << 10, 1 << 6);
   std::cout << "✅ passed NTT correctness test" << std::endl;
