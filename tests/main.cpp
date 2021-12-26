@@ -1,4 +1,5 @@
 #include "test.hpp"
+#include "test_merkle_tree.hpp"
 #include "test_ntt.hpp"
 #include "test_rescue_prime.hpp"
 
@@ -16,7 +17,7 @@ main(int argc, char** argv)
 #else
   device d{ default_selector{} };
 #endif
-  queue q{ d };
+  queue q{ d, { sycl::property::queue::enable_profiling() } };
 
   std::cout << "running on " << d.get_info<info::device::name>() << "\n"
             << std::endl;
@@ -37,6 +38,9 @@ main(int argc, char** argv)
   test_inv_sbox(q);
   test_permutation(q);
   std::cout << "✅ passed rescue prime tests" << std::endl;
+
+  test_merklize(q);
+  std::cout << "✅ passed merkle tree tests" << std::endl;
 
   check_ntt_correctness(q, 1 << 10, 1 << 6);
   std::cout << "✅ passed NTT correctness test" << std::endl;

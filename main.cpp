@@ -1,3 +1,4 @@
+#include "bench_merkle_tree.hpp"
 #include "bench_ntt.hpp"
 #include "bench_rescue_prime.hpp"
 #include <iomanip>
@@ -75,6 +76,34 @@ main(int argc, char** argv)
               << (double)tm / (double)(dim * dim * 1) << " ns"
               << "\t\t" << std::setw(15) << std::right
               << 1e9 / ((double)tm / (double)(dim * dim * 1)) << std::endl;
+  }
+
+  std::cout << "\nMerklize ( approach 1 ) using Rescue Prime on F(2**64 - "
+               "2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(11) << "leaves"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
+
+  for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
+    // time in nanoseconds --- beware !
+    uint64_t tm = benchmark_merklize_approach_1(q, dim, 1ul << 5);
+
+    std::cout << std::setw(11) << std::right << dim << "\t\t" << std::setw(15)
+              << std::right << tm * 1e-6 << " ms" << std::endl;
+  }
+
+  std::cout << "\nMerklize ( approach 2 ) using Rescue Prime on F(2**64 - "
+               "2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(11) << "leaves"
+            << "\t\t" << std::setw(15) << "total" << std::endl;
+
+  for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
+    // time in nanoseconds --- beware !
+    uint64_t tm = benchmark_merklize_approach_2(q, dim, 1ul << 5);
+
+    std::cout << std::setw(11) << std::right << dim << "\t\t" << std::setw(15)
+              << std::right << tm * 1e-6 << " ms" << std::endl;
   }
 
   std::cout << "\nForward NTT on F(2**64 - 2**32 + 1) elements 👇\n"
