@@ -11,18 +11,18 @@ benchmark_hash_elements(sycl::queue& q,
     static_cast<sycl::ulong*>(sycl::malloc_device(sizeof(sycl::ulong) * 8, q));
   sycl::ulong* hashes = static_cast<sycl::ulong*>(
     sycl::malloc_device(sizeof(sycl::ulong) * dim * dim * DIGEST_SIZE, q));
-  sycl::ulong16* mds_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* ark1_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* mds_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* ark1_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* mds_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* ark1_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* mds_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* ark1_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
   prepare_mds(mds_h);
   prepare_ark1(ark1_h);
@@ -35,11 +35,11 @@ benchmark_hash_elements(sycl::queue& q,
   });
 
   sycl::event evt_1 =
-    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong16) * STATE_WIDTH);
+    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong4) * STATE_WIDTH * 3);
   sycl::event evt_2 =
-    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
   sycl::event evt_3 =
-    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
 
   sycl::event evt_4 = q.submit([&](sycl::handler& h) {
     h.depends_on({ evt_0, evt_1, evt_2, evt_3 });
@@ -83,18 +83,18 @@ benchmark_merge(sycl::queue& q,
     static_cast<sycl::ulong*>(sycl::malloc_device(sizeof(sycl::ulong) * 8, q));
   sycl::ulong* merged_hashes = static_cast<sycl::ulong*>(
     sycl::malloc_device(sizeof(sycl::ulong) * dim * dim * DIGEST_SIZE, q));
-  sycl::ulong16* mds_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* ark1_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* mds_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* ark1_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* mds_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* ark1_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* mds_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* ark1_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
   prepare_mds(mds_h);
   prepare_ark1(ark1_h);
@@ -107,11 +107,11 @@ benchmark_merge(sycl::queue& q,
   });
 
   sycl::event evt_1 =
-    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong16) * STATE_WIDTH);
+    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong4) * STATE_WIDTH * 3);
   sycl::event evt_2 =
-    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
   sycl::event evt_3 =
-    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
 
   sycl::event evt_4 = q.submit([&](sycl::handler& h) {
     h.depends_on({ evt_0, evt_1, evt_2, evt_3 });

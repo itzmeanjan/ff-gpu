@@ -6,9 +6,9 @@ merklize_approach_1(sycl::queue& q,
                     sycl::ulong* const intermediates,
                     const size_t leaf_count,
                     const size_t wg_size,
-                    const sycl::ulong16* mds,
-                    const sycl::ulong16* ark1,
-                    const sycl::ulong16* ark2)
+                    const sycl::ulong4* mds,
+                    const sycl::ulong4* ark1,
+                    const sycl::ulong4* ark2)
 {
   // ensure only working with powers of 2 -many leaves
   assert((leaf_count & (leaf_count - 1)) == 0);
@@ -129,9 +129,9 @@ merklize_approach_2(sycl::queue& q,
                     sycl::ulong* const intermediates,
                     const size_t leaf_count,
                     const size_t wg_size,
-                    const sycl::ulong16* mds,
-                    const sycl::ulong16* ark1,
-                    const sycl::ulong16* ark2)
+                    const sycl::ulong4* mds,
+                    const sycl::ulong4* ark1,
+                    const sycl::ulong4* ark2)
 {
   // ensure only working with powers of 2 -many leaves
   assert((leaf_count & (leaf_count - 1)) == 0);
