@@ -260,15 +260,25 @@ exp_acc_(const sycl::ulong m,
          const sycl::ulong4* tail,
          sycl::ulong4* const out)
 {
+  sycl::ulong4 scratch[3] = {};
+
   *(out + 0) = *(base + 0);
   *(out + 1) = *(base + 1);
   *(out + 2) = *(base + 2);
 
   for (sycl::ulong i = 0; i < m; i++) {
-    ff_p_vec_mul_(out, out, out);
+    ff_p_vec_mul_(out, out, scratch);
+
+    *(out + 0) = *(scratch + 0);
+    *(out + 1) = *(scratch + 1);
+    *(out + 2) = *(scratch + 2);
   }
 
-  ff_p_vec_mul_(out, tail, out);
+  ff_p_vec_mul_(out, tail, scratch);
+
+  *(out + 0) = *(scratch + 0);
+  *(out + 1) = *(scratch + 1);
+  *(out + 2) = *(scratch + 2);
 }
 
 sycl::ulong16
@@ -302,20 +312,22 @@ apply_inv_sbox_(const sycl::ulong4* state_in, sycl::ulong4* const state_out)
   exp_acc_(12, t4, t4, t5);
 
   sycl::ulong4 t6[3] = {};
-  exp_acc_(6, t3, t5, t6);
+  exp_acc_(6, t5, t3, t6);
 
   sycl::ulong4 t7[3] = {};
   exp_acc_(31, t6, t6, t7);
 
   sycl::ulong4 a[3] = {};
-  ff_p_vec_mul_(t7, t7, a);
-  ff_p_vec_mul_(t6, a, a);
-  ff_p_vec_mul_(a, a, a);
-  ff_p_vec_mul_(a, a, a);
-
   sycl::ulong4 b[3] = {};
-  ff_p_vec_mul_(t1, t2, b);
-  ff_p_vec_mul_(b, state_in, b);
+  sycl::ulong4 scratch[3] = {};
+
+  ff_p_vec_mul_(t7, t7, scratch);
+  ff_p_vec_mul_(t6, scratch, a);
+  ff_p_vec_mul_(a, a, scratch);
+  ff_p_vec_mul_(scratch, scratch, a);
+
+  ff_p_vec_mul_(t1, t2, scratch);
+  ff_p_vec_mul_(scratch, state_in, b);
 
   ff_p_vec_mul_(a, b, state_out);
 }
@@ -349,12 +361,11 @@ apply_permutation_round_(const sycl::ulong4* state_in,
                          sycl::ulong4* const state_out)
 {
   sycl::ulong4 scratch_0[3] = {};
-  apply_sbox_(state_in, scratch_0);
-
   sycl::ulong4 scratch_1[3] = {};
-  apply_mds_(scratch_0, mds, scratch_1);
-
   sycl::ulong4 scratch_2[3] = {};
+
+  apply_sbox_(state_in, scratch_0);
+  apply_mds_(scratch_0, mds, scratch_1);
   apply_constants_(scratch_1, ark1, scratch_2);
 
   apply_inv_sbox_(scratch_2, scratch_0);
@@ -387,18 +398,16 @@ apply_rescue_permutation_(const sycl::ulong4* state_in,
                           sycl::ulong4* const state_out)
 {
   sycl::ulong4 scratch_0[3] = {};
-  apply_permutation_round_(state_in, mds, ark1, ark2, scratch_0);
-
   sycl::ulong4 scratch_1[3] = {};
-  apply_permutation_round_(scratch_0, mds, ark1, ark2, scratch_1);
-
   sycl::ulong4 scratch_2[3] = {};
-  apply_permutation_round_(scratch_1, mds, ark1, ark2, scratch_2);
 
-  apply_permutation_round_(scratch_2, mds, ark1, ark2, scratch_0);
-  apply_permutation_round_(scratch_0, mds, ark1, ark2, scratch_1);
-  apply_permutation_round_(scratch_1, mds, ark1, ark2, scratch_2);
-  apply_permutation_round_(scratch_2, mds, ark1, ark2, state_out);
+  apply_permutation_round_(state_in, mds, ark1 + 0, ark2 + 0, scratch_0);
+  apply_permutation_round_(scratch_0, mds, ark1 + 3, ark2 + 3, scratch_1);
+  apply_permutation_round_(scratch_1, mds, ark1 + 6, ark2 + 6, scratch_2);
+  apply_permutation_round_(scratch_2, mds, ark1 + 9, ark2 + 9, scratch_0);
+  apply_permutation_round_(scratch_0, mds, ark1 + 12, ark2 + 12, scratch_1);
+  apply_permutation_round_(scratch_1, mds, ark1 + 15, ark2 + 15, scratch_2);
+  apply_permutation_round_(scratch_2, mds, ark1 + 18, ark2 + 18, state_out);
 }
 
 sycl::ulong16
@@ -602,7 +611,7 @@ prepare_mds_(sycl::ulong4* const mds)
 {
   for (size_t i = 0; i < STATE_WIDTH * 3; i++) {
     *(mds + i) = sycl::ulong4(
-      MDS[i * 4 + 0], MDS[i * 4 + 1], MDS[i * 4 + 2], MDS[i * 4 + 3]);
+      MDS_[i * 4 + 0], MDS_[i * 4 + 1], MDS_[i * 4 + 2], MDS_[i * 4 + 3]);
   }
 }
 
@@ -635,7 +644,7 @@ prepare_ark1_(sycl::ulong4* const ark1)
 {
   for (size_t i = 0; i < NUM_ROUNDS * 3; i++) {
     *(ark1 + i) = sycl::ulong4(
-      ARK1[i * 4 + 0], ARK1[i * 4 + 1], ARK1[i * 4 + 2], ARK1[i * 4 + 3]);
+      ARK1_[i * 4 + 0], ARK1_[i * 4 + 1], ARK1_[i * 4 + 2], ARK1_[i * 4 + 3]);
   }
 }
 
@@ -668,7 +677,7 @@ prepare_ark2_(sycl::ulong4* const ark2)
 {
   for (size_t i = 0; i < NUM_ROUNDS * 3; i++) {
     *(ark2 + i) = sycl::ulong4(
-      ARK2[i * 4 + 0], ARK2[i * 4 + 1], ARK2[i * 4 + 2], ARK2[i * 4 + 3]);
+      ARK2_[i * 4 + 0], ARK2_[i * 4 + 1], ARK2_[i * 4 + 2], ARK2_[i * 4 + 3]);
   }
 }
 
