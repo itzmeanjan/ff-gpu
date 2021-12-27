@@ -58,6 +58,38 @@ ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b)
   return tmp_5 + tmp_7;
 }
 
+sycl::ulong4
+ff_p_vec_add__(sycl::ulong4 a, sycl::ulong4 b)
+{
+  // Following four lines are equivalent of writing
+  // b % FIELD_MOD, which converts all lanes of `b` vector
+  // into canonical representation
+  sycl::ulong4 mod_vec = sycl::ulong4(MOD);
+  sycl::long4 over_0 = b >= MOD;
+  sycl::ulong4 tmp_0 = (over_0.convert<ulong>() >> 63) * mod_vec;
+  sycl::ulong4 b_ok = b - tmp_0;
+
+  sycl::ulong4 tmp_1 = a + b_ok;
+  sycl::long4 over_1 = a > (std::numeric_limits<uint64_t>::max() - b_ok);
+  sycl::ulong4 tmp_2 = over_1.convert<ulong>() & MAX_UINT;
+
+  sycl::ulong4 tmp_3 = tmp_1 + tmp_2;
+  sycl::long4 over_2 = tmp_1 > (std::numeric_limits<uint64_t>::max() - tmp_2);
+  sycl::ulong4 tmp_4 = over_2.convert<ulong>() & MAX_UINT;
+
+  return tmp_3 + tmp_4;
+}
+
+void
+ff_p_vec_add_(const sycl::ulong4* a,
+              const sycl::ulong4* b,
+              sycl::ulong4* const c)
+{
+  *(c + 0) = ff_p_vec_add__(*(a + 0), *(b + 0));
+  *(c + 1) = ff_p_vec_add__(*(a + 1), *(b + 1));
+  *(c + 2) = ff_p_vec_add__(*(a + 2), *(b + 2));
+}
+
 sycl::ulong16
 ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b)
 {

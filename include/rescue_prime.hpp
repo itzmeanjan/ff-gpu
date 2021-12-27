@@ -17,14 +17,23 @@ inline constexpr uint64_t MAX_UINT = 0xffffffffull;
 // exactly 12 unsigned 64 -bit integers, enough for representing whole state
 // with out any space waste !
 //
-// Note, currently hash state is represented using vectors of 16 lanes i.e. sycl::ulong16
+// Note, currently hash state is represented using vectors of 16 lanes i.e.
+// sycl::ulong16
 //
 // WIP
-sycl::ulong4
+SYCL_EXTERNAL sycl::ulong4
 ff_p_vec_mul__(sycl::ulong4 a, sycl::ulong4 b);
 
-void
+SYCL_EXTERNAL void
 ff_p_vec_mul_(const sycl::ulong4* a,
+              const sycl::ulong4* b,
+              sycl::ulong4* const c);
+
+SYCL_EXTERNAL sycl::ulong4
+ff_p_vec_add__(sycl::ulong4 a, sycl::ulong4 b);
+
+SYCL_EXTERNAL void
+ff_p_vec_add_(const sycl::ulong4* a,
               const sycl::ulong4* b,
               sycl::ulong4* const c);
 //
