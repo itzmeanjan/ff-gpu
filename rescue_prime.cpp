@@ -341,6 +341,27 @@ apply_inv_sbox(sycl::ulong16 state)
   return ff_p_vec_mul(a, b);
 }
 
+void
+apply_permutation_round_(const sycl::ulong4* state_in,
+                         const sycl::ulong4* mds,
+                         const sycl::ulong4* ark1,
+                         const sycl::ulong4* ark2,
+                         sycl::ulong4* const state_out)
+{
+  sycl::ulong4 scratch_0[3] = {};
+  apply_sbox_(state_in, scratch_0);
+
+  sycl::ulong4 scratch_1[3] = {};
+  apply_mds_(scratch_0, mds, scratch_1);
+
+  sycl::ulong4 scratch_2[3] = {};
+  apply_constants_(scratch_1, ark1, scratch_2);
+
+  apply_inv_sbox_(scratch_2, scratch_0);
+  apply_mds_(scratch_0, mds, scratch_1);
+  apply_constants_(scratch_1, ark2, state_out);
+}
+
 sycl::ulong16
 apply_permutation_round(sycl::ulong16 state,
                         const sycl::ulong16* mds,
@@ -356,6 +377,28 @@ apply_permutation_round(sycl::ulong16 state,
   state = apply_constants(state, ark2);
 
   return state;
+}
+
+void
+apply_rescue_permutation_(const sycl::ulong4* state_in,
+                          const sycl::ulong4* mds,
+                          const sycl::ulong4* ark1,
+                          const sycl::ulong4* ark2,
+                          sycl::ulong4* const state_out)
+{
+  sycl::ulong4 scratch_0[3] = {};
+  apply_permutation_round_(state_in, mds, ark1, ark2, scratch_0);
+
+  sycl::ulong4 scratch_1[3] = {};
+  apply_permutation_round_(scratch_0, mds, ark1, ark2, scratch_1);
+
+  sycl::ulong4 scratch_2[3] = {};
+  apply_permutation_round_(scratch_1, mds, ark1, ark2, scratch_2);
+
+  apply_permutation_round_(scratch_2, mds, ark1, ark2, scratch_0);
+  apply_permutation_round_(scratch_0, mds, ark1, ark2, scratch_1);
+  apply_permutation_round_(scratch_1, mds, ark1, ark2, scratch_2);
+  apply_permutation_round_(scratch_2, mds, ark1, ark2, state_out);
 }
 
 sycl::ulong16
