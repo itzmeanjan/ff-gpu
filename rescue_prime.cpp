@@ -506,6 +506,15 @@ merge(const sycl::ulong* input_hashes,
 }
 
 void
+prepare_mds_(sycl::ulong4* const mds)
+{
+  for (size_t i = 0; i < STATE_WIDTH * 3; i++) {
+    *(mds + i) = sycl::ulong4(
+      MDS[i * 4 + 0], MDS[i * 4 + 1], MDS[i * 4 + 2], MDS[i * 4 + 3]);
+  }
+}
+
+void
 prepare_mds(sycl::ulong16* const mds)
 {
   for (size_t i = 0; i < STATE_WIDTH; i++) {
@@ -530,6 +539,15 @@ prepare_mds(sycl::ulong16* const mds)
 }
 
 void
+prepare_ark1_(sycl::ulong4* const ark1)
+{
+  for (size_t i = 0; i < NUM_ROUNDS * 3; i++) {
+    *(ark1 + i) = sycl::ulong4(
+      ARK1[i * 4 + 0], ARK1[i * 4 + 1], ARK1[i * 4 + 2], ARK1[i * 4 + 3]);
+  }
+}
+
+void
 prepare_ark1(sycl::ulong16* const ark1)
 {
   for (size_t i = 0; i < NUM_ROUNDS; i++) {
@@ -550,6 +568,15 @@ prepare_ark1(sycl::ulong16* const ark1)
                                       ARK1[i * 16 + 14],
                                       ARK1[i * 16 + 15]);
     *(ark1 + i) = vec;
+  }
+}
+
+void
+prepare_ark2_(sycl::ulong4* const ark2)
+{
+  for (size_t i = 0; i < NUM_ROUNDS * 3; i++) {
+    *(ark2 + i) = sycl::ulong4(
+      ARK2[i * 4 + 0], ARK2[i * 4 + 1], ARK2[i * 4 + 2], ARK2[i * 4 + 3]);
   }
 }
 

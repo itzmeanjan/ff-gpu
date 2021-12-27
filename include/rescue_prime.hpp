@@ -75,6 +75,15 @@ apply_rescue_permutation_(const sycl::ulong4* state_in,
                           const sycl::ulong4* ark1,
                           const sycl::ulong4* ark2,
                           sycl::ulong4* const state_out);
+
+void
+prepare_mds_(sycl::ulong4* const mds);
+
+void
+prepare_ark1_(sycl::ulong4* const ark1);
+
+void
+prepare_ark2_(sycl::ulong4* const ark2);
 //
 // --- New routine declaration ends ---
 
