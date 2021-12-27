@@ -8,6 +8,28 @@ inline constexpr uint64_t DIGEST_SIZE = 4;
 inline constexpr uint64_t NUM_ROUNDS = 7;
 inline constexpr uint64_t MAX_UINT = 0xffffffffull;
 
+// --- New routine declaration begins ---
+//
+// New routines required for porting to vectors with shorter lanes ( = 4 )
+// are being written at this moment. Once these changes are implemented,
+// rescue prime hash state can be represented using sycl::ulong4[3] --- an
+// array of length 3, where each element is of type `sycl::ulong4`, making
+// exactly 12 unsigned 64 -bit integers, enough for representing whole state
+// with out any space waste !
+//
+// Note, currently hash state is represented using vectors of 16 lanes i.e. sycl::ulong16
+//
+// WIP
+sycl::ulong4
+ff_p_vec_mul__(sycl::ulong4 a, sycl::ulong4 b);
+
+void
+ff_p_vec_mul_(const sycl::ulong4* a,
+              const sycl::ulong4* b,
+              sycl::ulong4* const c);
+//
+// --- New routine declaration ends ---
+
 /*
   Note : Actually I wanted to use `marray` instead of `vec`, but seems that
   `sycl::mul_hi` is not yet able to take `marray` as input in SYCL/ DPCPP

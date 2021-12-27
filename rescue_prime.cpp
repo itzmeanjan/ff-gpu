@@ -1,5 +1,39 @@
 #include <rescue_prime.hpp>
 
+sycl::ulong4
+ff_p_vec_mul__(sycl::ulong4 a, sycl::ulong4 b)
+{
+  sycl::ulong4 ab = a * b;
+  sycl::ulong4 cd = sycl::mul_hi(a, b);
+  sycl::ulong4 c = cd & MAX_UINT;
+  sycl::ulong4 d = cd >> 32;
+
+  sycl::ulong4 tmp_0 = ab - d;
+  sycl::long4 und_0 = ab < d; // check if underflowed
+  sycl::ulong4 tmp_1 = und_0.convert<ulong>();
+  sycl::ulong4 tmp_2 = tmp_1 & MAX_UINT;
+  sycl::ulong4 tmp_3 = tmp_0 - tmp_2;
+
+  sycl::ulong4 tmp_4 = (c << 32) - c;
+
+  sycl::ulong4 tmp_5 = tmp_3 + tmp_4;
+  sycl::long4 ovr_0 = tmp_3 > std::numeric_limits<uint64_t>::max() - tmp_4;
+  sycl::ulong4 tmp_6 = ovr_0.convert<ulong>();
+  sycl::ulong4 tmp_7 = tmp_6 & MAX_UINT;
+
+  return tmp_5 + tmp_7;
+}
+
+void
+ff_p_vec_mul_(const sycl::ulong4* a,
+              const sycl::ulong4* b,
+              sycl::ulong4* const c)
+{
+  *(c + 0) = ff_p_vec_mul__(*(a + 0), *(b + 0));
+  *(c + 1) = ff_p_vec_mul__(*(a + 1), *(b + 1));
+  *(c + 2) = ff_p_vec_mul__(*(a + 2), *(b + 2));
+}
+
 sycl::ulong16
 ff_p_vec_mul(sycl::ulong16 a, sycl::ulong16 b)
 {
