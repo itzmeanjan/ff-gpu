@@ -52,6 +52,15 @@ SYCL_EXTERNAL void
 apply_mds_(const sycl::ulong4* state_in,
            const sycl::ulong4* mds,
            sycl::ulong4* const state_out);
+
+SYCL_EXTERNAL void
+exp_acc_(const sycl::ulong m,
+         const sycl::ulong4* base,
+         const sycl::ulong4* tail,
+         sycl::ulong4* const out);
+
+SYCL_EXTERNAL void
+apply_inv_sbox_(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
 //
 // --- New routine declaration ends ---
 

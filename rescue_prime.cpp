@@ -254,6 +254,23 @@ apply_mds(sycl::ulong16 state, const sycl::ulong16* mds)
     v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, 0, 0, 0, 0);
 }
 
+void
+exp_acc_(const sycl::ulong m,
+         const sycl::ulong4* base,
+         const sycl::ulong4* tail,
+         sycl::ulong4* const out)
+{
+  *(out + 0) = *(base + 0);
+  *(out + 1) = *(base + 1);
+  *(out + 2) = *(base + 2);
+
+  for (sycl::ulong i = 0; i < m; i++) {
+    ff_p_vec_mul_(out, out, out);
+  }
+
+  ff_p_vec_mul_(out, tail, out);
+}
+
 sycl::ulong16
 exp_acc(const sycl::ulong m, sycl::ulong16 base, sycl::ulong16 tail)
 {
@@ -264,6 +281,43 @@ exp_acc(const sycl::ulong m, sycl::ulong16 base, sycl::ulong16 tail)
   }
 
   return ff_p_vec_mul(res, tail);
+}
+
+void
+apply_inv_sbox_(const sycl::ulong4* state_in, sycl::ulong4* const state_out)
+{
+  sycl::ulong4 t1[3] = {};
+  ff_p_vec_mul_(state_in, state_in, t1);
+
+  sycl::ulong4 t2[3] = {};
+  ff_p_vec_mul_(t1, t1, t2);
+
+  sycl::ulong4 t3[3] = {};
+  exp_acc_(3, t2, t2, t3);
+
+  sycl::ulong4 t4[3] = {};
+  exp_acc_(6, t3, t3, t4);
+
+  sycl::ulong4 t5[3] = {};
+  exp_acc_(12, t4, t4, t5);
+
+  sycl::ulong4 t6[3] = {};
+  exp_acc_(6, t3, t5, t6);
+
+  sycl::ulong4 t7[3] = {};
+  exp_acc_(31, t6, t6, t7);
+
+  sycl::ulong4 a[3] = {};
+  ff_p_vec_mul_(t7, t7, a);
+  ff_p_vec_mul_(t6, a, a);
+  ff_p_vec_mul_(a, a, a);
+  ff_p_vec_mul_(a, a, a);
+
+  sycl::ulong4 b[3] = {};
+  ff_p_vec_mul_(t1, t2, b);
+  ff_p_vec_mul_(b, state_in, b);
+
+  ff_p_vec_mul_(a, b, state_out);
 }
 
 sycl::ulong16
