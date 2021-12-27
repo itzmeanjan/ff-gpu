@@ -112,6 +112,21 @@ ff_p_vec_add(sycl::ulong16 a, sycl::ulong16 b)
   return tmp_3 + tmp_4;
 }
 
+void
+apply_sbox_(const sycl::ulong4* state_in, sycl::ulong4* const state_out)
+{
+  sycl::ulong4 state_in_2[3] = {};
+  ff_p_vec_mul_(state_in, state_in, state_in_2);
+
+  sycl::ulong4 state_in_4[3] = {};
+  ff_p_vec_mul_(state_in_2, state_in_2, state_in_4);
+
+  sycl::ulong4 state_in_6[3] = {};
+  ff_p_vec_mul_(state_in_2, state_in_4, state_in_6);
+
+  ff_p_vec_mul_(state_in, state_in_6, state_out);
+}
+
 sycl::ulong16
 apply_sbox(sycl::ulong16 state)
 {
@@ -120,6 +135,14 @@ apply_sbox(sycl::ulong16 state)
   sycl::ulong16 state6 = ff_p_vec_mul(state2, state4);
 
   return ff_p_vec_mul(state, state6);
+}
+
+void
+apply_constants_(const sycl::ulong4* state_in,
+                 const sycl::ulong4* cnst,
+                 sycl::ulong4* const state_out)
+{
+  ff_p_vec_add_(state_in, cnst, state_out);
 }
 
 sycl::ulong16

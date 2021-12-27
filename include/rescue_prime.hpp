@@ -36,6 +36,14 @@ SYCL_EXTERNAL void
 ff_p_vec_add_(const sycl::ulong4* a,
               const sycl::ulong4* b,
               sycl::ulong4* const c);
+
+SYCL_EXTERNAL void
+apply_sbox_(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
+
+SYCL_EXTERNAL void
+apply_constants_(const sycl::ulong4* state_in,
+                 const sycl::ulong4* cnst,
+                 sycl::ulong4* const state_out);
 //
 // --- New routine declaration ends ---
 
