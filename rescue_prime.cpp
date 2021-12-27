@@ -161,6 +161,16 @@ accumulate_vec4(sycl::ulong4 a)
 }
 
 sycl::ulong
+accumulate_state_(const sycl::ulong4* state)
+{
+  sycl::ulong v0 = accumulate_vec4(*(state + 0));
+  sycl::ulong v1 = accumulate_vec4(*(state + 1));
+  sycl::ulong v2 = accumulate_vec4(*(state + 2));
+
+  return static_cast<sycl::ulong>(ff_p_add(v2, ff_p_add(v0, v1)));
+}
+
+sycl::ulong
 accumulate_state(sycl::ulong16 state)
 {
   sycl::ulong8 state_lo = state.lo();
@@ -172,6 +182,54 @@ accumulate_state(sycl::ulong16 state)
   sycl::ulong v3 = accumulate_vec4(state_hi.hi());
 
   return accumulate_vec4(sycl::ulong4(v0, v1, v2, v3));
+}
+
+void
+apply_mds_(const sycl::ulong4* state_in,
+           const sycl::ulong4* mds,
+           sycl::ulong4* const state_out)
+{
+  sycl::ulong4 scratch[3] = {};
+
+  ff_p_vec_mul_(state_in, mds + 0, scratch);
+  sycl::ulong v0 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 3, scratch);
+  sycl::ulong v1 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 6, scratch);
+  sycl::ulong v2 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 9, scratch);
+  sycl::ulong v3 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 12, scratch);
+  sycl::ulong v4 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 15, scratch);
+  sycl::ulong v5 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 18, scratch);
+  sycl::ulong v6 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 21, scratch);
+  sycl::ulong v7 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 24, scratch);
+  sycl::ulong v8 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 27, scratch);
+  sycl::ulong v9 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 30, scratch);
+  sycl::ulong v10 = accumulate_state_(scratch);
+
+  ff_p_vec_mul_(state_in, mds + 33, scratch);
+  sycl::ulong v11 = accumulate_state_(scratch);
+
+  *(state_out + 0) = sycl::ulong4(v0, v1, v2, v3);
+  *(state_out + 1) = sycl::ulong4(v4, v5, v6, v7);
+  *(state_out + 2) = sycl::ulong4(v8, v9, v10, v11);
 }
 
 sycl::ulong16

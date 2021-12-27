@@ -44,6 +44,14 @@ SYCL_EXTERNAL void
 apply_constants_(const sycl::ulong4* state_in,
                  const sycl::ulong4* cnst,
                  sycl::ulong4* const state_out);
+
+SYCL_EXTERNAL sycl::ulong
+accumulate_state_(const sycl::ulong4* state);
+
+SYCL_EXTERNAL void
+apply_mds_(const sycl::ulong4* state_in,
+           const sycl::ulong4* mds,
+           sycl::ulong4* const state_out);
 //
 // --- New routine declaration ends ---
 
