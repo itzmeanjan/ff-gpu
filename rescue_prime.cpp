@@ -414,6 +414,72 @@ apply_rescue_permutation(sycl::ulong16 state,
 }
 
 void
+hash_elements_(const sycl::ulong* input_elements,
+               const sycl::ulong count,
+               sycl::ulong* const hash,
+               const sycl::ulong4* mds,
+               const sycl::ulong4* ark1,
+               const sycl::ulong4* ark2)
+{
+  sycl::ulong4 state[3] = { sycl::ulong4(0),
+                            sycl::ulong4(0),
+                            sycl::ulong4(0, 0, 0, count % MOD) };
+  sycl::ulong4 scratch[3] = {};
+
+  sycl::ulong i = 0;
+  for (sycl::ulong j = 0; j < count; j++) {
+    switch (i) {
+      case 0:
+        state[0].x() = ff_p_add(state[0].x(), *(input_elements + j));
+        break;
+      case 1:
+        state[0].y() = ff_p_add(state[0].y(), *(input_elements + j));
+        break;
+      case 2:
+        state[0].z() = ff_p_add(state[0].z(), *(input_elements + j));
+        break;
+      case 3:
+        state[0].w() = ff_p_add(state[0].w(), *(input_elements + j));
+        break;
+      case 4:
+        state[1].x() = ff_p_add(state[1].x(), *(input_elements + j));
+        break;
+      case 5:
+        state[1].y() = ff_p_add(state[1].y(), *(input_elements + j));
+        break;
+      case 6:
+        state[1].z() = ff_p_add(state[1].z(), *(input_elements + j));
+        break;
+      case 7:
+        state[1].w() = ff_p_add(state[1].w(), *(input_elements + j));
+        break;
+    }
+
+    if ((++i) % RATE_WIDTH == 0) {
+      apply_rescue_permutation_(state, mds, ark1, ark2, scratch);
+      i = 0;
+
+      *(state + 0) = *(scratch + 0);
+      *(state + 1) = *(scratch + 1);
+      *(state + 2) = *(scratch + 2);
+    }
+  }
+
+  if (i > 0) {
+    apply_rescue_permutation_(state, mds, ark1, ark2, scratch);
+
+    *(state + 0) = *(scratch + 0);
+    *(state + 1) = *(scratch + 1);
+    *(state + 2) = *(scratch + 2);
+  }
+
+  *(hash + 0) = state[0].x();
+  *(hash + 1) = state[0].y();
+  *(hash + 2) = state[0].z();
+  *(hash + 3) = state[0].w();
+}
+
+void
 hash_elements(const sycl::ulong* input_elements,
               const sycl::ulong count,
               sycl::ulong* const hash,
@@ -469,6 +535,32 @@ hash_elements(const sycl::ulong* input_elements,
   *(hash + 1) = digest.y();
   *(hash + 2) = digest.z();
   *(hash + 3) = digest.w();
+}
+
+void
+merge_(const sycl::ulong* input_hashes,
+       sycl::ulong* const merged_hash,
+       const sycl::ulong4* mds,
+       const sycl::ulong4* ark1,
+       const sycl::ulong4* ark2)
+{
+  sycl::ulong4 state[3] = { sycl::ulong4(*(input_hashes + 0),
+                                         *(input_hashes + 1),
+                                         *(input_hashes + 2),
+                                         *(input_hashes + 3)),
+                            sycl::ulong4(*(input_hashes + 4),
+                                         *(input_hashes + 5),
+                                         *(input_hashes + 6),
+                                         *(input_hashes + 7)),
+                            sycl::ulong4(0, 0, 0, RATE_WIDTH) };
+  sycl::ulong4 scratch[3] = {};
+
+  apply_rescue_permutation_(state, mds, ark1, ark2, scratch);
+
+  *(merged_hash + 0) = scratch[0].x();
+  *(merged_hash + 1) = scratch[0].y();
+  *(merged_hash + 2) = scratch[0].z();
+  *(merged_hash + 3) = scratch[0].w();
 }
 
 void

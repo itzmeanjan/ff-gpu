@@ -77,6 +77,21 @@ apply_rescue_permutation_(const sycl::ulong4* state_in,
                           sycl::ulong4* const state_out);
 
 void
+hash_elements_(const sycl::ulong* input_elements,
+               const sycl::ulong count,
+               sycl::ulong* const hash,
+               const sycl::ulong4* mds,
+               const sycl::ulong4* ark1,
+               const sycl::ulong4* ark2);
+
+void
+merge_(const sycl::ulong* input_hashes,
+       sycl::ulong* const merged_hash,
+       const sycl::ulong4* mds,
+       const sycl::ulong4* ark1,
+       const sycl::ulong4* ark2);
+
+void
 prepare_mds_(sycl::ulong4* const mds);
 
 void
