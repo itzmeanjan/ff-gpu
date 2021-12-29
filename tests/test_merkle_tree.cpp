@@ -3,7 +3,7 @@
 void
 test_merklize(sycl::queue& q)
 {
-  const size_t leaf_count = 16;
+  const size_t leaf_count = 1024;
 
   sycl::ulong* leaves = static_cast<sycl::ulong*>(
     sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));

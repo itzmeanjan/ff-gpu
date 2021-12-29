@@ -16,16 +16,16 @@ running on Tesla V100-SXM2-16GB
 Merklize ( approach 1 ) using Rescue Prime on F(2**64 - 2**32 + 1) elements 👇
 
      leaves		          total
-    1048576		        136.805 ms
-    2097152		        238.906 ms
-    4194304		        445.335 ms
-    8388608		        873.742 ms
-
-Merklize ( approach 2 ) using Rescue Prime on F(2**64 - 2**32 + 1) elements 👇
-
-     leaves		          total
     1048576		        63.0723 ms
     2097152		        116.168 ms
     4194304		        221.621 ms
     8388608		        431.217 ms
+
+Merklize ( approach 2 ) using Rescue Prime on F(2**64 - 2**32 + 1) elements 👇
+
+     leaves		          total
+    1048576		        136.805 ms
+    2097152		        238.906 ms
+    4194304		        445.335 ms
+    8388608		        873.742 ms
 ```

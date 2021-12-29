@@ -10,6 +10,10 @@
 //
 // Returns sum of all kernel execution times with nanosecond
 // level granularity
+//
+// Have taken major motivation from
+// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/c48b8555e07eb9557a20383cc9f3a4aeec834317/rescue_prime.c#L153-L164
+// where I wrote similar routine using OpenCL
 uint64_t
 merklize_approach_1(sycl::queue& q,
                     const sycl::ulong* leaves,
@@ -33,10 +37,6 @@ merklize_approach_1(sycl::queue& q,
 //
 // Returns total time spent on computing merkle tree intermediate nodes
 // with nanosecond level granularity
-//
-// Have taken major motivation from
-// https://github.com/itzmeanjan/vectorized-rescue-prime/blob/c48b8555e07eb9557a20383cc9f3a4aeec834317/rescue_prime.c#L153-L164
-// where I wrote similar routine using OpenCL
 uint64_t
 merklize_approach_2(sycl::queue& q,
                     const sycl::ulong* leaves,
