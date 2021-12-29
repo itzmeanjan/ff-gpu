@@ -4,8 +4,8 @@
 
 uint64_t
 benchmark_merklize_approach_1(sycl::queue& q,
-                   const size_t leaf_count,
-                   const size_t wg_size)
+                              const size_t leaf_count,
+                              const size_t wg_size)
 {
   sycl::ulong* leaves_h = static_cast<sycl::ulong*>(
     sycl::malloc_host(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
@@ -15,20 +15,20 @@ benchmark_merklize_approach_1(sycl::queue& q,
   sycl::ulong* intermediates = static_cast<sycl::ulong*>(
     sycl::malloc_device(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
 
-  sycl::ulong16* mds_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* mds_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * STATE_WIDTH, q));
+  sycl::ulong4* mds_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* mds_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
 
-  sycl::ulong16* ark1_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark1_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* ark1_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark1_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
-  sycl::ulong16* ark2_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* ark2_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
   {
     std::random_device rd;
@@ -47,11 +47,11 @@ benchmark_merklize_approach_1(sycl::queue& q,
   sycl::event evt_0 = q.memcpy(
     leaves_d, leaves_h, sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE);
   sycl::event evt_1 =
-    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong16) * STATE_WIDTH);
+    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong4) * STATE_WIDTH * 3);
   sycl::event evt_2 =
-    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
   sycl::event evt_3 =
-    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
 
   // wait for host to device copies to complete !
   q.wait();
@@ -75,8 +75,8 @@ benchmark_merklize_approach_1(sycl::queue& q,
 
 uint64_t
 benchmark_merklize_approach_2(sycl::queue& q,
-                   const size_t leaf_count,
-                   const size_t wg_size)
+                              const size_t leaf_count,
+                              const size_t wg_size)
 {
   sycl::ulong* leaves_h = static_cast<sycl::ulong*>(
     sycl::malloc_host(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
@@ -86,20 +86,20 @@ benchmark_merklize_approach_2(sycl::queue& q,
   sycl::ulong* intermediates = static_cast<sycl::ulong*>(
     sycl::malloc_device(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
 
-  sycl::ulong16* mds_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* mds_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * STATE_WIDTH, q));
+  sycl::ulong4* mds_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* mds_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
 
-  sycl::ulong16* ark1_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark1_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* ark1_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark1_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
-  sycl::ulong16* ark2_h = static_cast<sycl::ulong16*>(
-    sycl::malloc_host(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2_d = static_cast<sycl::ulong16*>(
-    sycl::malloc_device(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* ark2_h = static_cast<sycl::ulong4*>(
+    sycl::malloc_host(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2_d = static_cast<sycl::ulong4*>(
+    sycl::malloc_device(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
   {
     std::random_device rd;
@@ -118,11 +118,11 @@ benchmark_merklize_approach_2(sycl::queue& q,
   sycl::event evt_0 = q.memcpy(
     leaves_d, leaves_h, sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE);
   sycl::event evt_1 =
-    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong16) * STATE_WIDTH);
+    q.memcpy(mds_d, mds_h, sizeof(sycl::ulong4) * STATE_WIDTH * 3);
   sycl::event evt_2 =
-    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark1_d, ark1_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
   sycl::event evt_3 =
-    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong16) * NUM_ROUNDS);
+    q.memcpy(ark2_d, ark2_h, sizeof(sycl::ulong4) * NUM_ROUNDS * 3);
 
   // wait for host to device copies to complete !
   q.wait();

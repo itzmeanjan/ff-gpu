@@ -3,7 +3,7 @@
 void
 test_merklize(sycl::queue& q)
 {
-  const size_t leaf_count = 16;
+  const size_t leaf_count = 1024;
 
   sycl::ulong* leaves = static_cast<sycl::ulong*>(
     sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
@@ -11,12 +11,12 @@ test_merklize(sycl::queue& q)
     sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
   sycl::ulong* intermediates_b = static_cast<sycl::ulong*>(
     sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
-  sycl::ulong16* mds = static_cast<sycl::ulong16*>(
-    sycl::malloc_shared(sizeof(sycl::ulong16) * STATE_WIDTH, q));
-  sycl::ulong16* ark1 = static_cast<sycl::ulong16*>(
-    sycl::malloc_shared(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
-  sycl::ulong16* ark2 = static_cast<sycl::ulong16*>(
-    sycl::malloc_shared(sizeof(sycl::ulong16) * NUM_ROUNDS, q));
+  sycl::ulong4* mds = static_cast<sycl::ulong4*>(
+    sycl::malloc_shared(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
+  sycl::ulong4* ark1 = static_cast<sycl::ulong4*>(
+    sycl::malloc_shared(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
+  sycl::ulong4* ark2 = static_cast<sycl::ulong4*>(
+    sycl::malloc_shared(sizeof(sycl::ulong4) * NUM_ROUNDS * 3, q));
 
   {
     std::random_device rd;

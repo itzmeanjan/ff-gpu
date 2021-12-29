@@ -13,6 +13,7 @@ In this repository, currently I keep implementation of two finite field's arithm
 I've also written following implementations, along with benchmark results on CPU, GPU.
 
 - Rescue Prime Hash function
+- Merkle Tree Construction using Rescue Prime Hash
 - Six step algorithm based (I)*N*umber *T*heoretic *T*ransform
 - Cooley-Tukey algorithm based (I)NTT
 - DFT-style (I)NTT
@@ -20,8 +21,8 @@ I've also written following implementations, along with benchmark results on CPU
 ## Prerequisites
 
 - Make sure you've `make`, `clang-format` and `dpcpp`/ `clang++` installed
-- You can build DPC++ compiler from source, check [here](https://intel.github.io/llvm-docs/GetStartedGuide.html#prerequisites)
-- Or you may want to download pre-compiled Intel oneAPI toolkit, includes both compilers, check [here](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html) [**recommended**]
+- I suggest you build llvm-based DPC++ compiler from source, check [here](https://intel.github.io/llvm-docs/GetStartedGuide.html#prerequisites) [ **required for CUDA backend** ]
+- Or you may want to download pre-compiled Intel oneAPI toolkit, includes both compilers, check [here](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html)
 
 ## Benchmarks
 
@@ -38,10 +39,19 @@ Description:    Ubuntu 20.04.3 LTS
 ```bash
 $ dpcpp --version
 
-Intel(R) oneAPI DPC++/C++ Compiler 2021.3.0 (2021.3.0.20210619)
+Intel(R) oneAPI DPC++/C++ Compiler 2022.0.0 (2022.0.0.20211123)
 Target: x86_64-unknown-linux-gnu
 Thread model: posix
-InstalledDir: /opt/intel/oneapi/compiler/2021.3.0/linux/bin
+```
+
+or 
+
+```bash
+$ clang++ --version
+
+clang version 14.0.0 (https://github.com/intel/llvm dc9bd3fafdeacd28528eb4b1fef3ad9b76ef3b92)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
 ```
 
 - Compile, link & run
@@ -105,21 +115,19 @@ DEVICE=gpu make aot_gpu
 I run benchmark suite on both **Intel CPU/ GPU** and **Nvidia GPU**, keeping results 👇
 
 - Intel CPU/ GPU
-    - [Arithmetics on `F(2 ** 32)`](./benchmarks/ff.md)
-    - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ff_p.md)
     - [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/rescue_prime.md)
-    - [Six step algorithm-based (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#six-step-algorithm-based-intt)
-    - [Cooley-Tukey (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#cooley-tukey-inv-fft)
-    - [DFT-style (I)NTT on `F(2 ** 64 - 2 ** 32 + 1)`](./benchmarks/ntt.md#dft-style-ntt)
+    - [Merkle Tree Construction Using Rescue Prime Hash](./benchmarks/merkle_tree.md)
+    - [(Inverse) Number Theoretic Transform on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/ntt.md)
+        - DFT style (I)NTT
+        - Cooley-Tukey (I)FFT
+        - Six Step Algorithm (I)FFT
 
 - Nvidia GPU
-    - [Arithmetics on `F(2 ** 32)`](benchmarks/cuda_ff.md)
-    - [Arithmetics on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_ff_p.md)
     - [Rescue Prime Hash on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_rescue_prime.md)
+    - [Merkel Tree Construction](benchmarks/cuda_merkle_tree.md)
     - [(Inverse) Number Theoretic Transform on `F(2 ** 64 - 2 ** 32 + 1)`](benchmarks/cuda_ntt.md)
         - Cooley-Tukey (I)FFT
         - Six Step Algorithm (I)FFT
-    - [Merkel Tree Construction](benchmarks/cuda_merkle_tree.md)
 
 ## Tests
 
