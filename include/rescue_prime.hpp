@@ -150,6 +150,19 @@ exp_acc(const sycl::ulong m,
 SYCL_EXTERNAL void
 apply_inv_sbox(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
 
+// Applies a single round of rescue permutation, while reading all rescue
+// constants from local memory
+//
+// Note, implementation wise no major difference between these two overloaded
+// variants expect usage of local scratch pad memory
+SYCL_EXTERNAL void
+apply_permutation_round(const sycl::ulong4* state_in,
+                        scratch_mem_1d_t mds,
+                        scratch_mem_1d_t ark1,
+                        scratch_mem_1d_t ark2,
+                        const size_t ark_offset,
+                        sycl::ulong4* const state_out);
+
 // Apply a round of rescue permutation, which mixes/ consumes input into hash
 // state
 //
@@ -161,6 +174,18 @@ apply_permutation_round(const sycl::ulong4* state_in,
                         const sycl::ulong4* ark1,
                         const sycl::ulong4* ark2,
                         sycl::ulong4* const state_out);
+
+// Applies all 7 rescue permutation rounds on hash state, consuming input ( till
+// now ) into state, while reading all hash constants from local memory
+//
+// Note, implementation wise no major difference between these two overloaded
+// variants expect usage of local scratch pad memory
+SYCL_EXTERNAL void
+apply_rescue_permutation(const sycl::ulong4* state_in,
+                         scratch_mem_1d_t mds,
+                         scratch_mem_1d_t ark1,
+                         scratch_mem_1d_t ark2,
+                         sycl::ulong4* const state_out);
 
 // Applies all rounds ( = 7 ) of rescue permutation, updating hash state
 //
@@ -180,6 +205,19 @@ apply_rescue_permutation(const sycl::ulong4* state_in,
                          const sycl::ulong4* ark2,
                          sycl::ulong4* const state_out);
 
+// Computes rescue prime hash digest ( of 256 -bit width )
+// from input prime field elements array, while reading all rescue constants
+// from local memory
+//
+// Implementation wise it's very similar to other overloaded variant
+SYCL_EXTERNAL void
+hash_elements(const sycl::ulong* input_elements,
+              const sycl::ulong count,
+              sycl::ulong* const hash,
+              scratch_mem_1d_t mds,
+              scratch_mem_1d_t ark1,
+              scratch_mem_1d_t ark2);
+
 // Computes rescue prime hash of input prime field elements, by consuming
 // all input elements into 12 elements wide hash state
 //
@@ -192,6 +230,20 @@ hash_elements(const sycl::ulong* input_elements,
               const sycl::ulong4* mds,
               const sycl::ulong4* ark1,
               const sycl::ulong4* ark2);
+
+// Merges two rescue prime digests into single digest of 256 -bit width, where
+// input is of width 512 -bit
+//
+// In this implementation all rescue constants are read from faster local memory
+//
+// Note, implementation wise no major changes are present in between two
+// overloaded variants
+SYCL_EXTERNAL void
+merge(const sycl::ulong* input_hashes,
+      sycl::ulong* const merged_hash,
+      scratch_mem_1d_t mds,
+      scratch_mem_1d_t ark1,
+      scratch_mem_1d_t ark2);
 
 // Merges two rescue prime digests into single digest of width 256 -bit
 //
