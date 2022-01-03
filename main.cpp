@@ -56,9 +56,9 @@ main(int argc, char** argv)
               << 1e9 / ((double)tm / (double)(dim * dim * 1)) << std::endl;
   }
 
-  std::cout
-    << "\nRescue prime merge hashes on F(2**64 - 2**32 + 1) elements 👇\n"
-    << std::endl;
+  std::cout << "\nRescue prime merge hashes ( using global memory ) on F(2**64 "
+               "- 2**32 + 1) elements 👇\n"
+            << std::endl;
   std::cout << std::setw(11) << "dimension"
             << "\t\t" << std::setw(10) << "iterations"
             << "\t\t" << std::setw(15) << "total"
@@ -68,6 +68,28 @@ main(int argc, char** argv)
   for (uint dim = B; dim <= (1ul << 12); dim <<= 1) {
     // time in nanoseconds --- beware !
     uint64_t tm = benchmark_merge(q, dim, 1ul << 6, 1);
+
+    std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
+              << std::right << dim << "\t\t" << std::setw(8) << std::right << 1
+              << "\t\t" << std::setw(15) << std::right << tm << " ns"
+              << "\t\t" << std::setw(15) << std::right
+              << (double)tm / (double)(dim * dim * 1) << " ns"
+              << "\t\t" << std::setw(15) << std::right
+              << 1e9 / ((double)tm / (double)(dim * dim * 1)) << std::endl;
+  }
+
+  std::cout << "\nRescue prime merge hashes ( using scratch pad ) on F(2**64 - "
+               "2**32 + 1) elements 👇\n"
+            << std::endl;
+  std::cout << std::setw(11) << "dimension"
+            << "\t\t" << std::setw(10) << "iterations"
+            << "\t\t" << std::setw(15) << "total"
+            << "\t\t" << std::setw(20) << "avg"
+            << "\t\t" << std::setw(20) << "op/s" << std::endl;
+
+  for (uint dim = B; dim <= (1ul << 12); dim <<= 1) {
+    // time in nanoseconds --- beware !
+    uint64_t tm = benchmark_merge_using_scratch_pad(q, dim, 1ul << 6, 1);
 
     std::cout << std::setw(5) << std::left << dim << "x" << std::setw(5)
               << std::right << dim << "\t\t" << std::setw(8) << std::right << 1
