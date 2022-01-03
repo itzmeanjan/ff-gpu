@@ -110,6 +110,90 @@ accumulate_state(const sycl::ulong4* state)
 
 void
 apply_mds(const sycl::ulong4* state_in,
+          scratch_mem_1d_t mds,
+          sycl::ulong4* const state_out)
+{
+  sycl::ulong4 scratch[3] = {};
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[0]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[1]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[2]);
+
+  sycl::ulong v0 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[3]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[4]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[5]);
+
+  sycl::ulong v1 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[6]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[7]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[8]);
+
+  sycl::ulong v2 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[9]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[10]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[11]);
+
+  sycl::ulong v3 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[12]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[13]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[14]);
+
+  sycl::ulong v4 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[15]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[16]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[17]);
+
+  sycl::ulong v5 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[18]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[19]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[20]);
+
+  sycl::ulong v6 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[21]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[22]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[23]);
+
+  sycl::ulong v7 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[24]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[25]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[26]);
+
+  sycl::ulong v8 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[27]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[28]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[29]);
+
+  sycl::ulong v9 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[30]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[31]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[32]);
+
+  sycl::ulong v10 = accumulate_state(scratch);
+
+  scratch[0] = ff_p_vec_mul_(*(state_in + 0), mds[33]);
+  scratch[1] = ff_p_vec_mul_(*(state_in + 1), mds[34]);
+  scratch[2] = ff_p_vec_mul_(*(state_in + 2), mds[35]);
+
+  sycl::ulong v11 = accumulate_state(scratch);
+
+  *(state_out + 0) = sycl::ulong4(v0, v1, v2, v3);
+  *(state_out + 1) = sycl::ulong4(v4, v5, v6, v7);
+  *(state_out + 2) = sycl::ulong4(v8, v9, v10, v11);
+}
+
+void
+apply_mds(const sycl::ulong4* state_in,
           const sycl::ulong4* mds,
           sycl::ulong4* const state_out)
 {
