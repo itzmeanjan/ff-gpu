@@ -83,6 +83,17 @@ apply_sbox(const sycl::ulong4* state_in, sycl::ulong4* const state_out)
 
 void
 apply_constants(const sycl::ulong4* state_in,
+                scratch_mem_1d_t cnst,
+                const size_t cnst_offset,
+                sycl::ulong4* const state_out)
+{
+  *(state_out + 0) = ff_p_vec_add_(*(state_in + 0), cnst[cnst_offset + 0]);
+  *(state_out + 1) = ff_p_vec_add_(*(state_in + 1), cnst[cnst_offset + 1]);
+  *(state_out + 2) = ff_p_vec_add_(*(state_in + 2), cnst[cnst_offset + 2]);
+}
+
+void
+apply_constants(const sycl::ulong4* state_in,
                 const sycl::ulong4* cnst,
                 sycl::ulong4* const state_out)
 {

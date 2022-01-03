@@ -60,6 +60,19 @@ ff_p_vec_add(const sycl::ulong4* a,
 SYCL_EXTERNAL void
 apply_sbox(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
 
+// Applies rescue round key constants on hash state while reading
+// constants from faster local memory, which should hopefully
+// benefit me in long run
+//
+// Implementation is same as original `apply_constants`, just that
+// local memory accessor is offset by provided factor to use correct
+// round key constants
+SYCL_EXTERNAL void
+apply_constants(const sycl::ulong4* state_in,
+                scratch_mem_1d_t cnst,
+                const size_t cnst_offset,
+                sycl::ulong4* const state_out);
+
 // Applies rescue round key constants on hash state
 //
 // actually simple vectorized modular addition --- that's all this routine does
