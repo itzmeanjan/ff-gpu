@@ -11,6 +11,8 @@ test_merklize(sycl::queue& q)
     sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
   sycl::ulong* intermediates_b = static_cast<sycl::ulong*>(
     sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
+  sycl::ulong* intermediates_c = static_cast<sycl::ulong*>(
+    sycl::malloc_shared(sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE, q));
   sycl::ulong4* mds = static_cast<sycl::ulong4*>(
     sycl::malloc_shared(sizeof(sycl::ulong4) * STATE_WIDTH * 3, q));
   sycl::ulong4* ark1 = static_cast<sycl::ulong4*>(
@@ -32,6 +34,7 @@ test_merklize(sycl::queue& q)
   // it should be zeroed, as being set here !
   q.memset(intermediates_a, 0, sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE);
   q.memset(intermediates_b, 0, sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE);
+  q.memset(intermediates_c, 0, sizeof(sycl::ulong) * leaf_count * DIGEST_SIZE);
   q.wait();
 
   prepare_mds(mds);
@@ -49,6 +52,10 @@ test_merklize(sycl::queue& q)
   // host sychronization in function itself !
   merklize_approach_2(
     q, leaves, intermediates_b, leaf_count, 8, mds, ark1, ark2);
+
+  // host sychronization in function itself !
+  merklize_approach_3(
+    q, leaves, intermediates_c, leaf_count, 32, mds, ark1, ark2);
 
   // asserting that first digest ( which spans 256 -bit ) in intermediate
   // node holder memory allocation is never touched !
@@ -69,6 +76,13 @@ test_merklize(sycl::queue& q)
   assert(*(intermediates_b + 2) == 0);
   assert(*(intermediates_b + 3) == 0);
 
+  // ensures first digest cell is never touched by third merklization function
+  // invocation
+  assert(*(intermediates_c + 0) == 0);
+  assert(*(intermediates_c + 1) == 0);
+  assert(*(intermediates_c + 2) == 0);
+  assert(*(intermediates_c + 3) == 0);
+
   // asserting root of merkle tree, where each computed by two different
   // kernels
   assert(*(intermediates_a + 4) == *(intermediates_b + 4));
@@ -76,10 +90,16 @@ test_merklize(sycl::queue& q)
   assert(*(intermediates_a + 6) == *(intermediates_b + 6));
   assert(*(intermediates_a + 7) == *(intermediates_b + 7));
 
+  assert(*(intermediates_b + 4) == *(intermediates_c + 4));
+  assert(*(intermediates_b + 5) == *(intermediates_c + 5));
+  assert(*(intermediates_b + 6) == *(intermediates_c + 6));
+  assert(*(intermediates_b + 7) == *(intermediates_c + 7));
+
   // deallocate all memory resources
   sycl::free(leaves, q);
   sycl::free(intermediates_a, q);
   sycl::free(intermediates_b, q);
+  sycl::free(intermediates_c, q);
   sycl::free(mds, q);
   sycl::free(ark1, q);
   sycl::free(ark2, q);

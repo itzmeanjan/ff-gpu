@@ -176,7 +176,7 @@ merklize_approach_2(sycl::queue& q,
           const size_t loc_size = it.get_local_range(0);
           sycl::group<1> grp = it.get_group();
 
-          sycl::group_barrier(grp, sycl::memory_scope_work_group);
+          sycl::group_barrier(grp, sycl::memory_scope_device);
 
           while ((1 << (round - 1)) < loc_size) {
             if (idx % (1 << round) == 0) {
@@ -189,7 +189,7 @@ merklize_approach_2(sycl::queue& q,
                     ark2);
             }
 
-            sycl::group_barrier(grp, sycl::memory_scope_work_group);
+            sycl::group_barrier(grp, sycl::memory_scope_device);
             round++;
           }
         });
