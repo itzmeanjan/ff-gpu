@@ -151,7 +151,7 @@ main(int argc, char** argv)
     int64_t tm = benchmark_forward_transform(q, dim, B);
 
     std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
-              << std::right << tm << " ms" << std::endl;
+              << std::right << tm << " us" << std::endl;
   }
 
   std::cout << "\nInverse NTT on F(2**64 - 2**32 + 1) elements 👇\n"
@@ -163,7 +163,7 @@ main(int argc, char** argv)
     int64_t tm = benchmark_inverse_transform(q, dim, B);
 
     std::cout << std::setw(5) << std::right << dim << "\t\t" << std::setw(15)
-              << std::right << tm << " ms" << std::endl;
+              << std::right << tm << " us" << std::endl;
   }
 
   std::cout << "\nCooley-Tukey FFT on F(2**64 - 2**32 + 1) elements 👇\n"
