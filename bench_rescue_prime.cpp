@@ -201,26 +201,30 @@ benchmark_merge_using_scratch_pad(sycl::queue& q,
                          sycl::range<2>{ 1, wg_size } },
       [=](sycl::nd_item<2> it) {
         const size_t idx = it.get_global_linear_id();
+        const size_t loc_idx = it.get_local_linear_id();
         sycl::group grp = it.get_group();
 
-        if (idx % 12 == idx) {
+        if (loc_idx % 12 == loc_idx) {
           for (size_t j = 0; j < 3; j++) {
-            mds_loc[j * 12 + idx] = mds_d[j * 12 + idx];
+            const size_t k = j * 12 + loc_idx;
+            mds_loc[k] = mds_d[k];
           }
         }
 
-        if (idx % 7 == idx) {
+        if (loc_idx % 7 == loc_idx) {
           for (size_t j = 0; j < 3; j++) {
-            ark1_loc[j * 7 + idx] = ark1_d[j * 7 + idx];
+            const size_t k = j * 7 + loc_idx;
+            ark1_loc[k] = ark1_d[k];
           }
 
           for (size_t j = 0; j < 3; j++) {
-            ark2_loc[j * 7 + idx] = ark2_d[j * 7 + idx];
+            const size_t k = j * 7 + loc_idx;
+            ark2_loc[k] = ark2_d[k];
           }
         }
 
         // ensure all rescue prime constants written into local memory
-        // and visiable to all work-items in work-group
+        // and visible to all work-items in work-group
         sycl::group_barrier(grp, sycl::memory_scope::work_group);
 
         for (uint32_t i = 0; i < itr_count; i++) {
