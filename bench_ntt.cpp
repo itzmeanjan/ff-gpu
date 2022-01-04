@@ -22,7 +22,7 @@ benchmark_forward_transform(sycl::queue& q,
   std::free(vec_src);
   std::free(vec_fwd);
 
-  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+  return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
     .count();
 }
 
@@ -48,7 +48,7 @@ benchmark_inverse_transform(sycl::queue& q,
   std::free(vec_src);
   std::free(vec_inv);
 
-  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+  return std::chrono::duration_cast<std::chrono::microseconds>(end - start)
     .count();
 }
 

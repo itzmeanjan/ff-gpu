@@ -46,3 +46,18 @@ merklize_approach_2(sycl::queue& q,
                     const sycl::ulong4* mds,
                     const sycl::ulong4* ark1,
                     const sycl::ulong4* ark2);
+
+// Re-implemented approach 1, while using local scratch pad memory for storing
+// rescue prime hash constants
+//
+// An experimental attempt at improving Merklization performance
+// while leveraging GPU memory hierarchy in better fashion
+uint64_t
+merklize_approach_3(sycl::queue& q,
+                    const sycl::ulong* leaves,
+                    sycl::ulong* const intermediates,
+                    const size_t leaf_count,
+                    const size_t wg_size,
+                    const sycl::ulong4* mds,
+                    const sycl::ulong4* ark1,
+                    const sycl::ulong4* ark2);

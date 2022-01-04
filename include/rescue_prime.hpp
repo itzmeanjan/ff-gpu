@@ -2,6 +2,9 @@
 #include <ff_p.hpp>
 #include <limits>
 
+using scratch_mem_1d_t = sycl::
+  accessor<sycl::ulong4, 1, sycl::access_mode::read_write, sycl::target::local>;
+
 inline constexpr uint64_t STATE_WIDTH = 12;
 inline constexpr uint64_t RATE_WIDTH = 8;
 inline constexpr uint64_t DIGEST_SIZE = 4;
@@ -57,6 +60,19 @@ ff_p_vec_add(const sycl::ulong4* a,
 SYCL_EXTERNAL void
 apply_sbox(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
 
+// Applies rescue round key constants on hash state while reading
+// constants from faster local memory, which should hopefully
+// benefit me in long run
+//
+// Implementation is same as original `apply_constants`, just that
+// local memory accessor is offset by provided factor to use correct
+// round key constants
+SYCL_EXTERNAL void
+apply_constants(const sycl::ulong4* state_in,
+                scratch_mem_1d_t cnst,
+                const size_t cnst_offset,
+                sycl::ulong4* const state_out);
+
 // Applies rescue round key constants on hash state
 //
 // actually simple vectorized modular addition --- that's all this routine does
@@ -84,6 +100,20 @@ accumulate_vec4(sycl::ulong4 a);
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L168-L199
 SYCL_EXTERNAL sycl::ulong
 accumulate_state(const sycl::ulong4* state);
+
+// Overloaded MDS matrix multiplication function, where MDS matrix itself is
+// stored in local memory, so that low latency benefits of local memory can be
+// used while performing faster multiplication
+//
+// Implementation wise it's as same as
+// https://github.com/itzmeanjan/ff-gpu/blob/3145c5800b44df7622b3a311e8728857d986be17/rescue_prime.cpp#L195-L198
+//
+// Length of `mds` array ( allocated in local memory during kernel submission )
+// should be 36, where each element is a 256 -bit wide vector i.e. sycl::ulong4
+SYCL_EXTERNAL void
+apply_mds(const sycl::ulong4* state_in,
+          scratch_mem_1d_t mds,
+          sycl::ulong4* const state_out);
 
 // Performs matrix vector multiplication; updates state of rescue prime
 // hash by applying MDS matrix
@@ -120,6 +150,19 @@ exp_acc(const sycl::ulong m,
 SYCL_EXTERNAL void
 apply_inv_sbox(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
 
+// Applies a single round of rescue permutation, while reading all rescue
+// constants from local memory
+//
+// Note, implementation wise no major difference between these two overloaded
+// variants expect usage of local scratch pad memory
+SYCL_EXTERNAL void
+apply_permutation_round(const sycl::ulong4* state_in,
+                        scratch_mem_1d_t mds,
+                        scratch_mem_1d_t ark1,
+                        scratch_mem_1d_t ark2,
+                        const size_t ark_offset,
+                        sycl::ulong4* const state_out);
+
 // Apply a round of rescue permutation, which mixes/ consumes input into hash
 // state
 //
@@ -127,9 +170,21 @@ apply_inv_sbox(const sycl::ulong4* state_in, sycl::ulong4* const state_out);
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L296-L313
 SYCL_EXTERNAL void
 apply_permutation_round(const sycl::ulong4* state_in,
-                         const sycl::ulong4* mds,
-                         const sycl::ulong4* ark1,
-                         const sycl::ulong4* ark2,
+                        const sycl::ulong4* mds,
+                        const sycl::ulong4* ark1,
+                        const sycl::ulong4* ark2,
+                        sycl::ulong4* const state_out);
+
+// Applies all 7 rescue permutation rounds on hash state, consuming input ( till
+// now ) into state, while reading all hash constants from local memory
+//
+// Note, implementation wise no major difference between these two overloaded
+// variants expect usage of local scratch pad memory
+SYCL_EXTERNAL void
+apply_rescue_permutation(const sycl::ulong4* state_in,
+                         scratch_mem_1d_t mds,
+                         scratch_mem_1d_t ark1,
+                         scratch_mem_1d_t ark2,
                          sycl::ulong4* const state_out);
 
 // Applies all rounds ( = 7 ) of rescue permutation, updating hash state
@@ -145,10 +200,23 @@ apply_permutation_round(const sycl::ulong4* state_in,
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L315-L332
 SYCL_EXTERNAL void
 apply_rescue_permutation(const sycl::ulong4* state_in,
-                          const sycl::ulong4* mds,
-                          const sycl::ulong4* ark1,
-                          const sycl::ulong4* ark2,
-                          sycl::ulong4* const state_out);
+                         const sycl::ulong4* mds,
+                         const sycl::ulong4* ark1,
+                         const sycl::ulong4* ark2,
+                         sycl::ulong4* const state_out);
+
+// Computes rescue prime hash digest ( of 256 -bit width )
+// from input prime field elements array, while reading all rescue constants
+// from local memory
+//
+// Implementation wise it's very similar to other overloaded variant
+SYCL_EXTERNAL void
+hash_elements(const sycl::ulong* input_elements,
+              const sycl::ulong count,
+              sycl::ulong* const hash,
+              scratch_mem_1d_t mds,
+              scratch_mem_1d_t ark1,
+              scratch_mem_1d_t ark2);
 
 // Computes rescue prime hash of input prime field elements, by consuming
 // all input elements into 12 elements wide hash state
@@ -157,11 +225,25 @@ apply_rescue_permutation(const sycl::ulong4* state_in,
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/614500dd1f271e4f8badf1305c8077e2532eb510/kernel.cl#L345-L422
 SYCL_EXTERNAL void
 hash_elements(const sycl::ulong* input_elements,
-               const sycl::ulong count,
-               sycl::ulong* const hash,
-               const sycl::ulong4* mds,
-               const sycl::ulong4* ark1,
-               const sycl::ulong4* ark2);
+              const sycl::ulong count,
+              sycl::ulong* const hash,
+              const sycl::ulong4* mds,
+              const sycl::ulong4* ark1,
+              const sycl::ulong4* ark2);
+
+// Merges two rescue prime digests into single digest of 256 -bit width, where
+// input is of width 512 -bit
+//
+// In this implementation all rescue constants are read from faster local memory
+//
+// Note, implementation wise no major changes are present in between two
+// overloaded variants
+SYCL_EXTERNAL void
+merge(const sycl::ulong* input_hashes,
+      sycl::ulong* const merged_hash,
+      scratch_mem_1d_t mds,
+      scratch_mem_1d_t ark1,
+      scratch_mem_1d_t ark2);
 
 // Merges two rescue prime digests into single digest of width 256 -bit
 //
@@ -176,10 +258,10 @@ hash_elements(const sycl::ulong* input_elements,
 // https://github.com/itzmeanjan/vectorized-rescue-prime/blob/77e371ef2fb11ba7d7369005a60a0888393729f0/kernel.cl#L424-L474
 SYCL_EXTERNAL void
 merge(const sycl::ulong* input_hashes,
-       sycl::ulong* const merged_hash,
-       const sycl::ulong4* mds,
-       const sycl::ulong4* ark1,
-       const sycl::ulong4* ark2);
+      sycl::ulong* const merged_hash,
+      const sycl::ulong4* mds,
+      const sycl::ulong4* ark1,
+      const sycl::ulong4* ark2);
 
 // Stores MDS matrix in kernel expected form i.e. each row of matrix inside
 // vector with 16 lanes
