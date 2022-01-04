@@ -7,6 +7,7 @@ using namespace sycl;
 
 const uint32_t N = 1 << 10;
 const uint32_t B = 1 << 7;
+const size_t BENCH_ROUND = 4;
 
 int
 main(int argc, char** argv)
@@ -108,7 +109,12 @@ main(int argc, char** argv)
 
   for (uint dim = (1ul << 20); dim <= (1ul << 24); dim <<= 1) {
     // time in nanoseconds --- beware !
-    uint64_t tm = benchmark_merklize_approach_1(q, dim, 1ul << 5);
+    double tm = 0;
+    for (size_t i = 0; i < BENCH_ROUND; i++) {
+      tm +=
+        static_cast<double>(benchmark_merklize_approach_1(q, dim, 1ul << 5));
+    }
+    tm /= static_cast<double>(BENCH_ROUND);
 
     std::cout << std::setw(11) << std::right << dim << "\t\t" << std::setw(15)
               << std::right << tm * 1e-6 << " ms" << std::endl;
@@ -122,7 +128,12 @@ main(int argc, char** argv)
 
   for (uint dim = (1ul << 20); dim <= (1ul << 24); dim <<= 1) {
     // time in nanoseconds --- beware !
-    uint64_t tm = benchmark_merklize_approach_2(q, dim, 1ul << 5);
+    double tm = 0;
+    for (size_t i = 0; i < BENCH_ROUND; i++) {
+      tm +=
+        static_cast<double>(benchmark_merklize_approach_2(q, dim, 1ul << 5));
+    }
+    tm /= static_cast<double>(BENCH_ROUND);
 
     std::cout << std::setw(11) << std::right << dim << "\t\t" << std::setw(15)
               << std::right << tm * 1e-6 << " ms" << std::endl;
@@ -136,7 +147,12 @@ main(int argc, char** argv)
 
   for (uint dim = (1ul << 20); dim <= (1ul << 24); dim <<= 1) {
     // time in nanoseconds --- beware !
-    uint64_t tm = benchmark_merklize_approach_3(q, dim, 1ul << 5);
+    double tm = 0;
+    for (size_t i = 0; i < BENCH_ROUND; i++) {
+      tm +=
+        static_cast<double>(benchmark_merklize_approach_3(q, dim, 1ul << 5));
+    }
+    tm /= static_cast<double>(BENCH_ROUND);
 
     std::cout << std::setw(11) << std::right << dim << "\t\t" << std::setw(15)
               << std::right << tm * 1e-6 << " ms" << std::endl;
