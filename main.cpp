@@ -106,7 +106,7 @@ main(int argc, char** argv)
   std::cout << std::setw(11) << "leaves"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
+  for (uint dim = (1ul << 20); dim <= (1ul << 24); dim <<= 1) {
     // time in nanoseconds --- beware !
     uint64_t tm = benchmark_merklize_approach_1(q, dim, 1ul << 5);
 
@@ -120,7 +120,7 @@ main(int argc, char** argv)
   std::cout << std::setw(11) << "leaves"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
+  for (uint dim = (1ul << 20); dim <= (1ul << 24); dim <<= 1) {
     // time in nanoseconds --- beware !
     uint64_t tm = benchmark_merklize_approach_2(q, dim, 1ul << 5);
 
@@ -134,7 +134,7 @@ main(int argc, char** argv)
   std::cout << std::setw(11) << "leaves"
             << "\t\t" << std::setw(15) << "total" << std::endl;
 
-  for (uint dim = (1ul << 20); dim <= (1ul << 23); dim <<= 1) {
+  for (uint dim = (1ul << 20); dim <= (1ul << 24); dim <<= 1) {
     // time in nanoseconds --- beware !
     uint64_t tm = benchmark_merklize_approach_3(q, dim, 1ul << 5);
 
