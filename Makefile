@@ -1,4 +1,4 @@
-CXX = clang++
+CXX = dpcpp
 CXXFLAGS = -std=c++17 -Wall
 SYCLFLAGS = -fsycl
 SYCLSGFLAGS = -fsycl-default-sub-group-size 32
@@ -52,7 +52,7 @@ main.o: main.cpp include/bench_rescue_prime.hpp include/bench_ntt.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c $^ $(INCLUDES)
 
 clean:
-	find . -name '*.o' -o -name 'run' -o -name 'a.out' -o -name '*.gch' -o -name 'test' -o  -name '__pycache__' | xargs rm -rf
+	find . -name '*.o' -o -name 'run' -o -name 'a.out' -o -name '*.gch' -o -name 'test' -o  -name '__pycache__' -o -name 'lib*.so' | xargs rm -rf
 
 format:
 	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i --style=Mozilla
@@ -89,13 +89,18 @@ test: tests/ff_p.o tests/merkle_tree.o tests/test_merkle_tree.o tests/rescue_pri
 	@./tests/$@
 
 genlib: wrapper/ff_p.o wrapper/ff_p_wrapper.o
-	$(CXX) $(SYCLFLAGS) --shared -fPIC wrapper/*.o -o wrapper/libff_p.so
+	# linking host and pre-compiled device code;
+	# producing shared library which will be
+	# interacted from example python module `ff_p`
+	$(CXX) $(SYCLFLAGS) --shared -fPIC -fsycl-targets=spir64_x86_64 wrapper/*.o -o wrapper/libff_p.so
 
 wrapper/ff_p.o: ff_p.cpp
-	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)
+	# pre-compile kernels targeting CPU
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -fsycl-targets=spir64_x86_64 -c $^ -fPIC -o $@ $(INCLUDES)
 
 wrapper/ff_p_wrapper.o: wrapper/ff_p.cpp
-	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c $^ -fPIC -o $@ $(INCLUDES)
+	# pre-compile kernels targeting CPU
+	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -fsycl-targets=spir64_x86_64 -c $^ -fPIC -o $@ $(INCLUDES)
 
 aot_cpu:
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c main.cpp -o main.o $(INCLUDES)
@@ -122,14 +127,14 @@ aot_gpu:
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(SYCLSGFLAGS) $(INCLUDES) $(DFLAGS) -fsycl-targets=spir64_gen -Xs "-device 0x4905" ff_p.cpp bench_rescue_prime.cpp rescue_prime.cpp tests/test_ntt.cpp bench_ntt.cpp ntt.cpp bench_merkle_tree.cpp merkle_tree.cpp utils.o main.o
 
 cuda:
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c main.cpp -o main.o $(DFLAGS)
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c utils.cpp -o utils.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_merkle_tree.cpp -o bench_merkle_tree.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_rescue_prime.cpp -o bench_rescue_prime.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_ntt.cpp -o bench_ntt.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c merkle_tree.cpp -o merkle_tree.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ff_p.cpp -o ff_p.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ntt.cpp -o ntt.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c rescue_prime.cpp -o rescue_prime.o
-	$(CXX) $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c tests/test_ntt.cpp -o test_ntt.o
-	$(CXX) $(SYCLCUDAFLAGS) *.o -o $(PROG)
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c main.cpp -o main.o $(DFLAGS)
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c utils.cpp -o utils.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_merkle_tree.cpp -o bench_merkle_tree.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_rescue_prime.cpp -o bench_rescue_prime.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c bench_ntt.cpp -o bench_ntt.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c merkle_tree.cpp -o merkle_tree.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ff_p.cpp -o ff_p.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c ntt.cpp -o ntt.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c rescue_prime.cpp -o rescue_prime.o
+	clang++ $(CXXFLAGS) $(SYCLCUDAFLAGS) $(INCLUDES)  -c tests/test_ntt.cpp -o test_ntt.o
+	clang++ $(SYCLCUDAFLAGS) *.o -o $(PROG)
