@@ -1,91 +1,78 @@
 #include "ff_p.hpp"
 
-extern "C" uint64_t
-add(uint64_t a, uint64_t b)
+extern "C" void
+make_queue(void** wq)
 {
-  sycl::device d{ sycl::default_selector{} };
-  sycl::queue q{ d };
+  sycl::default_selector d_sel{};
+  sycl::device d{ d_sel };
+  sycl::context c{ d };
+  sycl::queue* q = new sycl::queue{ c, d };
 
-  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), q);
+  *wq = q;
+}
 
-  q.memset(res, 0, sizeof(uint64_t));
-  q.single_task([=]() { *res = ff_p_add(a, b) % MOD; });
-  q.wait();
+extern "C" uint64_t
+add(void* wq, uint64_t a, uint64_t b)
+{
+  sycl::queue* q = reinterpret_cast<sycl::queue*>(wq);
+
+  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), *q);
+  q->single_task([=]() { *res = ff_p_add(a, b) % MOD; }).wait();
 
   return *res;
 }
 
 extern "C" uint64_t
-sub(uint64_t a, uint64_t b)
+sub(void* wq, uint64_t a, uint64_t b)
 {
-  sycl::device d{ sycl::default_selector{} };
-  sycl::queue q{ d };
+  sycl::queue* q = reinterpret_cast<sycl::queue*>(wq);
 
-  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), q);
-
-  q.memset(res, 0, sizeof(uint64_t));
-  q.single_task([=]() { *res = ff_p_sub(a, b) % MOD; });
-  q.wait();
+  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), *q);
+  q->single_task([=]() { *res = ff_p_sub(a, b) % MOD; }).wait();
 
   return *res;
 }
 
 extern "C" uint64_t
-multiply(uint64_t a, uint64_t b)
+multiply(void* wq, uint64_t a, uint64_t b)
 {
-  sycl::device d{ sycl::default_selector{} };
-  sycl::queue q{ d };
+  sycl::queue* q = reinterpret_cast<sycl::queue*>(wq);
 
-  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), q);
-
-  q.memset(res, 0, sizeof(uint64_t));
-  q.single_task([=]() { *res = ff_p_mult(a, b) % MOD; });
-  q.wait();
+  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), *q);
+  q->single_task([=]() { *res = ff_p_mult(a, b) % MOD; }).wait();
 
   return *res;
 }
 
 extern "C" uint64_t
-exponentiate(uint64_t a, uint64_t b)
+exponentiate(void* wq, uint64_t a, uint64_t b)
 {
-  sycl::device d{ sycl::default_selector{} };
-  sycl::queue q{ d };
+  sycl::queue* q = reinterpret_cast<sycl::queue*>(wq);
 
-  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), q);
-
-  q.memset(res, 0, sizeof(uint64_t));
-  q.single_task([=]() { *res = ff_p_pow(a, b) % MOD; });
-  q.wait();
+  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), *q);
+  q->single_task([=]() { *res = ff_p_pow(a, b) % MOD; }).wait();
 
   return *res;
 }
 
 extern "C" uint64_t
-inverse(uint64_t a)
+inverse(void* wq, uint64_t a)
 {
-  sycl::device d{ sycl::default_selector{} };
-  sycl::queue q{ d };
+  sycl::queue* q = reinterpret_cast<sycl::queue*>(wq);
 
-  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), q);
-
-  q.memset(res, 0, sizeof(uint64_t));
-  q.single_task([=]() { *res = ff_p_inv(a) % MOD; });
-  q.wait();
+  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), *q);
+  q->single_task([=]() { *res = ff_p_inv(a) % MOD; }).wait();
 
   return *res;
 }
 
 extern "C" uint64_t
-divide(uint64_t a, uint64_t b)
+divide(void* wq, uint64_t a, uint64_t b)
 {
-  sycl::device d{ sycl::default_selector{} };
-  sycl::queue q{ d };
+  sycl::queue* q = reinterpret_cast<sycl::queue*>(wq);
 
-  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), q);
-
-  q.memset(res, 0, sizeof(uint64_t));
-  q.single_task([=]() { *res = ff_p_div(a, b) % MOD; });
-  q.wait();
+  uint64_t* res = (uint64_t*)sycl::malloc_shared(sizeof(uint64_t), *q);
+  q->single_task([=]() { *res = ff_p_div(a, b) % MOD; }).wait();
 
   return *res;
 }
