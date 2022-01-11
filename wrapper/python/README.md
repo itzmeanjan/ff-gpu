@@ -4,19 +4,27 @@ I write respective `Python` wrapper functions for abstracting interaction with s
 
 > Before you use Python module defined in this directory, make sure you've run `make genlib` and generated shared object.
 
-Now you can import `ff_p` and perform basic prime field arithmetics.
+Now you can import `ff_p` and perform basic prime field arithmetics on accelerator, but you'll probably never want to do this, as offloading single prime field computation into accelerator doesn't help anyhow. 
+
+> **Note, main purpose of creating this Python module is depicting that it can be done easily & testing my SYCL prime field arithmetics implementation against another module written in Python, named `galois`**
 
 > Note, prime field modulus is `2**64 - 2**32 + 1`
 
-```python3
-from ff_p import *
+```python
+from ff_p import ff_p
 
-assert 3 == ff_p_add(1, 2)
-assert 18446744069414584320 == ff_p_sub(1, 2)
-assert 19456 == ff_p_multiply(19, 1 << 10)
-assert (1 << 10) == ff_p_exponentiate(2, 10)
-assert 18302628881372282881 == ff_p_inverse(128)
-assert 8198552919739815254 == ff_p_divide(2, 9)
+ff = ff_p() # create object which will be
+            # used for further interaction
+            # with device, it encapsulates
+            # SYCL queue where jobs will be
+            # submitted to
+
+assert 3 == ff.add(1, 2)
+assert 18446744069414584320 == ff.sub(1, 2)
+assert 19456 == ff.multiply(19, 1 << 10)
+assert (1 << 10) == ff.exponentiate(2, 10)
+assert 18302628881372282881 == ff.inverse(128)
+assert 8198552919739815254 == ff.divide(2, 9)
 ```
 
 ## Tests
