@@ -19,13 +19,13 @@ to_canonical(const uint64_t a)
 
 // Modular addition of two prime field elements
 //
-// Note: operands doesn't necessarily need to ∈ F_p
-// but second operand will be converted to canonical representation
+// Note: operands doesn't necessarily need to ∈ F_p but second operand will be
+// converted to canonical representation
 //
-// Return value may ∉ F_p, it's function invoker's
-// responsibility to convert it to canonical representation
+// Return value may ∉ F_p, it's function invoker's responsibility to convert it
+// to canonical representation
 static inline uint64_t
-add(uint64_t a, uint64_t b)
+add(const uint64_t a, uint64_t b)
 {
   b = to_canonical(b);
 
@@ -44,31 +44,27 @@ add(uint64_t a, uint64_t b)
 
 // Modular subtraction of two prime field elements
 //
-// Note: operands doesn't necessarily need to ∈ F_p
-// but second operand will be made `b % MOD`
+// Note: operands doesn't necessarily need to ∈ F_p but second operand will be
+// converted to canonical representation
 //
-// Return value may ∉ F_p, it's function invoker's
-// responsibility to perform ret % MOD
+// Return value may ∉ F_p, it's function invoker's responsibility to convert it
+// to canonical representation
 static inline uint64_t
-sub(uint64_t a, uint64_t b)
+sub(const uint64_t a, uint64_t b)
 {
-  if (b >= MOD) {
-    b -= MOD;
-  }
+  b = to_canonical(b);
 
-  uint64_t res_0 = a - b;
-  bool under_0 = a < b;
+  const uint64_t res0 = a - b;
+  const bool under0 = a < b;
 
-  uint32_t zero = 0;
-  uint64_t tmp_0 = (uint64_t)(zero - (uint32_t)(under_0 ? 1 : 0));
+  const uint64_t t0 = static_cast<uint64_t>(0u - static_cast<uint32_t>(under0));
 
-  uint64_t res_1 = res_0 - tmp_0;
-  bool under_1 = res_0 < tmp_0;
+  const uint64_t res1 = res0 - t0;
+  const bool under1 = res0 < t0;
 
-  uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(under_1 ? 1 : 0));
-  uint64_t res = res_1 + tmp_1;
+  const uint64_t t1 = static_cast<uint64_t>(0u - static_cast<uint32_t>(under1));
 
-  return res;
+  return res1 + t1;
 }
 
 // Given two 64 -bit unsigned integers ( say a, b ), this function computes
