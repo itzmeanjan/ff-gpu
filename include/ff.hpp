@@ -8,33 +8,38 @@ namespace ff {
 // Prime modulus of field, F_p, where p = 2 ** 64 - 2 ** 32 + 1
 constexpr uint64_t MOD = (((1ull << 63) - (1ull << 31)) << 1) + 1ull;
 
+// Given a 64 -bit unsigned integer, this function converts it to canonical
+// representation by computing a % MOD
+static inline uint64_t
+to_canonical(const uint64_t a)
+{
+  const uint64_t res[2] = { a, a - ff::MOD };
+  return res[a >= ff::MOD];
+}
+
 // Modular addition of two prime field elements
 //
 // Note: operands doesn't necessarily need to ∈ F_p
-// but second operand will be made `b % MOD`
+// but second operand will be converted to canonical representation
 //
 // Return value may ∉ F_p, it's function invoker's
-// responsibility to perform ret % MOD
+// responsibility to convert it to canonical representation
 static inline uint64_t
 add(uint64_t a, uint64_t b)
 {
-  if (b >= MOD) {
-    b -= MOD;
-  }
+  b = to_canonical(b);
 
-  uint64_t res_0 = a + b;
-  bool over_0 = a > UINT64_MAX - b;
+  const uint64_t res0 = a + b;
+  const bool over0 = a > UINT64_MAX - b;
 
-  uint32_t zero = 0;
-  uint64_t tmp_0 = (uint64_t)(zero - (uint32_t)(over_0 ? 1 : 0));
+  const uint64_t t0 = static_cast<uint64_t>(0u - static_cast<uint32_t>(over0));
 
-  uint64_t res_1 = res_0 + tmp_0;
-  bool over_1 = res_0 > UINT64_MAX - tmp_0;
+  const uint64_t res1 = res0 + t0;
+  const bool over1 = res0 > UINT64_MAX - t0;
 
-  uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(over_1 ? 1 : 0));
-  uint64_t res = res_1 + tmp_1;
+  const uint64_t t1 = static_cast<uint64_t>(0u - static_cast<uint32_t>(over1));
 
-  return res;
+  return res1 + t1;
 }
 
 // Modular subtraction of two prime field elements
@@ -222,13 +227,6 @@ div(uint64_t a, uint64_t b)
 
   uint64_t b_inv = inv(b);
   return mult(a, b_inv);
-}
-
-static inline uint64_t
-to_canonical(const uint64_t a)
-{
-  const uint64_t res[2] = { a, a - ff::MOD };
-  return res[a >= ff::MOD];
 }
 
 }
