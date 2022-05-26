@@ -2,6 +2,9 @@
 #include <bit>
 #include <cstdint>
 
+// Finite field arithmetics for prime = 2^64 - 2^32 + 1
+namespace ff {
+
 // Prime modulus of field, F_p, where p = 2 ** 64 - 2 ** 32 + 1
 constexpr uint64_t MOD = (((1ull << 63) - (1ull << 31)) << 1) + 1ull;
 
@@ -13,7 +16,7 @@ constexpr uint64_t MOD = (((1ull << 63) - (1ull << 31)) << 1) + 1ull;
 // Return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
 static inline uint64_t
-ff_p_add(uint64_t a, uint64_t b)
+add(uint64_t a, uint64_t b)
 {
   if (b >= MOD) {
     b -= MOD;
@@ -42,7 +45,7 @@ ff_p_add(uint64_t a, uint64_t b)
 // Return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
 static inline uint64_t
-ff_p_sub(uint64_t a, uint64_t b)
+sub(uint64_t a, uint64_t b)
 {
   if (b >= MOD) {
     b -= MOD;
@@ -98,7 +101,7 @@ mul_hi(const uint64_t a, const uint64_t b)
 // Return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
 static inline uint64_t
-ff_p_mult(uint64_t a, uint64_t b)
+mult(uint64_t a, uint64_t b)
 {
   if (b >= MOD) {
     b -= MOD;
@@ -134,7 +137,7 @@ ff_p_mult(uint64_t a, uint64_t b)
 // Return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
 static inline uint64_t
-ff_p_pow(uint64_t a, const uint64_t b)
+pow(uint64_t a, const uint64_t b)
 {
   if (b == 0) {
     return 1;
@@ -150,9 +153,9 @@ ff_p_pow(uint64_t a, const uint64_t b)
 
   uint64_t r = b & 0b1 ? a : 1;
   for (uint8_t i = 1; i < 64 - std::countl_zero(b); i++) {
-    a = ff_p_mult(a, a);
+    a = mult(a, a);
     if ((b >> i) & 0b1) {
-      r = ff_p_mult(r, a);
+      r = mult(r, a);
     }
   }
   return r;
@@ -173,7 +176,7 @@ ff_p_pow(uint64_t a, const uint64_t b)
 // Return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
 static inline uint64_t
-ff_p_inv(uint64_t a)
+inv(uint64_t a)
 {
   if (a >= MOD) {
     a -= MOD;
@@ -189,7 +192,7 @@ ff_p_inv(uint64_t a)
   }
 
   const uint64_t exp = MOD - 2;
-  return ff_p_pow(a, exp);
+  return pow(a, exp);
 }
 
 // Modular division of one prime field element by another one
@@ -202,7 +205,7 @@ ff_p_inv(uint64_t a)
 // Return value may ∉ F_p, it's function invoker's
 // responsibility to perform ret % MOD
 static inline uint64_t
-ff_p_div(uint64_t a, uint64_t b)
+div(uint64_t a, uint64_t b)
 {
   if (b == 0) {
     // ** no multiplicative inverse of additive identity **
@@ -217,6 +220,8 @@ ff_p_div(uint64_t a, uint64_t b)
     return 0;
   }
 
-  uint64_t b_inv = ff_p_inv(b);
-  return ff_p_mult(a, b_inv);
+  uint64_t b_inv = inv(b);
+  return mult(a, b_inv);
+}
+
 }
