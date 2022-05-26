@@ -167,7 +167,7 @@ pow(uint64_t a, const uint64_t b)
 // Return value may ∉ F_p, it's function invoker's responsibility to convert it
 // to canonical representation
 static inline uint64_t
-inv(uint64_t a)
+inv(const uint64_t a)
 {
   return pow(to_canonical(a), MOD - 2ull);
 }
@@ -179,26 +179,12 @@ inv(uint64_t a)
 // It computes a * (b ** -1), uses already defined multiplicative
 // inverse finder function
 //
-// Return value may ∉ F_p, it's function invoker's
-// responsibility to perform ret % MOD
+// Return value may ∉ F_p, it's function invoker's responsibility to convert it
+// to canonical representation
 static inline uint64_t
-div(uint64_t a, uint64_t b)
+div(const uint64_t a, const uint64_t b)
 {
-  if (b == 0) {
-    // ** no multiplicative inverse of additive identity **
-    //
-    // I'm not throwing an exception from here, because
-    // this function is supposed to be invoked from
-    // kernel body, where exception throwing is not (yet) allowed !
-    return 0;
-  }
-
-  if (a == 0) {
-    return 0;
-  }
-
-  uint64_t b_inv = inv(b);
-  return mult(a, b_inv);
+  return mult(a, inv(b));
 }
 
 }
