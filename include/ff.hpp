@@ -224,4 +224,11 @@ div(uint64_t a, uint64_t b)
   return mult(a, b_inv);
 }
 
+static inline uint64_t
+to_canonical(const uint64_t a)
+{
+  const uint64_t res[2] = { a, a - ff::MOD };
+  return res[a >= ff::MOD];
+}
+
 }
