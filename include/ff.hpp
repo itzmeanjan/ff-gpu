@@ -1,5 +1,6 @@
 #pragma once
 #include <bit>
+#include <cstddef>
 #include <cstdint>
 
 // Finite field arithmetics for prime = 2^64 - 2^32 + 1
@@ -132,29 +133,21 @@ mult(const uint64_t a, uint64_t b)
 //
 // Note: operands doesn't necessarily need to ∈ F_p
 //
-// Return value may ∉ F_p, it's function invoker's
-// responsibility to perform ret % MOD
+// Return value may ∉ F_p, it's function invoker's responsibility to convert it
+// to canonical representation
 static inline uint64_t
 pow(uint64_t a, const uint64_t b)
 {
-  if (b == 0) {
-    return 1;
-  }
+  const uint64_t arr[2] = { 1ull, a };
+  uint64_t r = arr[b & 0b1ull];
 
-  if (b == 1) {
-    return a;
-  }
+  const size_t until = 64ull - std::countl_zero(b);
 
-  if (a == 0) {
-    return 0;
-  }
-
-  uint64_t r = b & 0b1 ? a : 1;
-  for (uint8_t i = 1; i < 64 - std::countl_zero(b); i++) {
+  for (size_t i = 1; i < until; i++) {
     a = mult(a, a);
-    if ((b >> i) & 0b1) {
-      r = mult(r, a);
-    }
+
+    const uint64_t arr[2] = { 1ull, a };
+    r = mult(r, arr[(b >> i) & 0b1ull]);
   }
   return r;
 }
