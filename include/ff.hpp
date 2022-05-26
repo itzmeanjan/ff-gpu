@@ -159,31 +159,17 @@ pow(uint64_t a, const uint64_t b)
 // modulo operation
 //
 // This function uses the fact a ** -1 = 1 / a = a ** (p - 2) ( mod p )
-// where p = prime field modulas
+// where p = prime field modulus
 //
 // It raises operand to (p - 2)-th power, which is multiplicative
 // inverse of operand
 //
-// Return value may ∉ F_p, it's function invoker's
-// responsibility to perform ret % MOD
+// Return value may ∉ F_p, it's function invoker's responsibility to convert it
+// to canonical representation
 static inline uint64_t
 inv(uint64_t a)
 {
-  if (a >= MOD) {
-    a -= MOD;
-  }
-
-  if (a == 0) {
-    // ** no multiplicative inverse of additive identity **
-    //
-    // I'm not throwing an exception from here, because
-    // this function is supposed to be invoked from
-    // kernel body, where exception throwing is not (yet) allowed !
-    return 0;
-  }
-
-  const uint64_t exp = MOD - 2;
-  return pow(a, exp);
+  return pow(to_canonical(a), MOD - 2ull);
 }
 
 // Modular division of one prime field element by another one
