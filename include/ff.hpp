@@ -1,49 +1,222 @@
 #pragma once
-#include <CL/sycl.hpp>
+#include <bit>
+#include <cstdint>
 
-// extension field of which prime number
-inline constexpr uint32_t CHARACTERISTIC = 0b10;
-// maximum degree of field polynomial
-inline constexpr uint32_t DEGREE = 0b100000;
-// number of elements present in field
-inline constexpr uint64_t ORDER = (uint64_t)CHARACTERISTIC << (DEGREE - 0b1);
-// irreducible polynomial for 2**32 field:
-// x^32 + x^15 + x^9 + x^7 + x^4 + x^3 + 1
-inline constexpr uint64_t IRREDUCIBLE_POLY =
-  0b100000000000000001000001010011001;
+// Prime modulus of field, F_p, where p = 2 ** 64 - 2 ** 32 + 1
+constexpr uint64_t MOD = (((1ull << 63) - (1ull << 31)) << 1) + 1ull;
 
-// adds two finite field elements
-SYCL_EXTERNAL uint32_t
-ff_add(const uint32_t a, const uint32_t b);
+// Modular addition of two prime field elements
+//
+// Note: operands doesn't necessarily need to ∈ F_p
+// but second operand will be made `b % MOD`
+//
+// Return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
+static inline uint64_t
+ff_p_add(uint64_t a, uint64_t b)
+{
+  if (b >= MOD) {
+    b -= MOD;
+  }
 
-// subtracts one field element from another one, implementation
-// is same as `ff_add`
-SYCL_EXTERNAL uint32_t
-ff_sub(const uint32_t a, const uint32_t b);
+  uint64_t res_0 = a + b;
+  bool over_0 = a > UINT64_MAX - b;
 
-// negation of one finite field element is same
-// as the given number, because each field element
-// is additive inverse to self
-SYCL_EXTERNAL uint32_t
-ff_neg(const uint32_t a);
+  uint32_t zero = 0;
+  uint64_t tmp_0 = (uint64_t)(zero - (uint32_t)(over_0 ? 1 : 0));
 
-// multiplies two finite field elements
-// while respecting field rules
-SYCL_EXTERNAL uint32_t
-ff_mult(const uint32_t a, const uint32_t b);
+  uint64_t res_1 = res_0 + tmp_0;
+  bool over_1 = res_0 > UINT64_MAX - tmp_0;
 
-// inverts a field element i.e. finds multiplicative
-// inverse of it, given that it's not
-// additive identity of field
-SYCL_EXTERNAL uint32_t
-ff_inv(const uint32_t a);
+  uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(over_1 ? 1 : 0));
+  uint64_t res = res_1 + tmp_1;
 
-// divides one field element by another one, which is nothing
-// but multiplying numerator with multiplicative inverse of
-// denominator
-SYCL_EXTERNAL uint32_t
-ff_div(const uint32_t a, const uint32_t b);
+  return res;
+}
 
-// raises field element to power b, given b <= 0 || b > 0
-SYCL_EXTERNAL uint32_t
-ff_pow(const uint32_t a, const int32_t b);
+// Modular subtraction of two prime field elements
+//
+// Note: operands doesn't necessarily need to ∈ F_p
+// but second operand will be made `b % MOD`
+//
+// Return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
+static inline uint64_t
+ff_p_sub(uint64_t a, uint64_t b)
+{
+  if (b >= MOD) {
+    b -= MOD;
+  }
+
+  uint64_t res_0 = a - b;
+  bool under_0 = a < b;
+
+  uint32_t zero = 0;
+  uint64_t tmp_0 = (uint64_t)(zero - (uint32_t)(under_0 ? 1 : 0));
+
+  uint64_t res_1 = res_0 - tmp_0;
+  bool under_1 = res_0 < tmp_0;
+
+  uint64_t tmp_1 = (uint64_t)(zero - (uint32_t)(under_1 ? 1 : 0));
+  uint64_t res = res_1 + tmp_1;
+
+  return res;
+}
+
+// Given two 64 -bit unsigned integers ( say a, b ), this function computes
+// higher 64 -bits of  a * b
+//
+// See
+// https://github.com/itzmeanjan/simd-rescue-prime/blob/c2b4de0/src/ff.rs#L10-L25
+static inline uint64_t
+mul_hi(const uint64_t a, const uint64_t b)
+{
+  const uint64_t a_lo = a & static_cast<uint64_t>(UINT32_MAX);
+  const uint64_t a_hi = a >> 32;
+  const uint64_t b_lo = b & static_cast<uint64_t>(UINT32_MAX);
+  const uint64_t b_hi = b >> 32;
+
+  const uint64_t a_x_b_hi = a_hi * b_hi;
+  const uint64_t a_x_b_mid = a_hi * b_lo;
+  const uint64_t b_x_a_mid = b_hi * a_lo;
+  const uint64_t a_x_b_lo = a_lo * b_lo;
+
+  const uint64_t t0 = static_cast<uint64_t>(static_cast<uint32_t>(a_x_b_mid));
+  const uint64_t t1 = static_cast<uint64_t>(static_cast<uint32_t>(b_x_a_mid));
+  const uint64_t t2 = a_x_b_lo >> 32;
+
+  const uint64_t carry = (t0 + t1 + t2) >> 32;
+
+  return a_x_b_hi + (a_x_b_mid >> 32) + (b_x_a_mid >> 32) + carry;
+}
+
+// Modular mulitiplication of two prime field elements
+//
+// Note: operands doesn't necessarily need to ∈ F_p
+// but second operand will be made `b % MOD`
+//
+// Return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
+static inline uint64_t
+ff_p_mult(uint64_t a, uint64_t b)
+{
+  if (b >= MOD) {
+    b -= MOD;
+  }
+
+  uint64_t ab = a * b;
+  uint64_t cd = mul_hi(a, b);
+  uint64_t c = cd & 0x00000000ffffffff;
+  uint64_t d = cd >> 32;
+
+  uint64_t res_0 = ab - d;
+  bool under_0 = ab < d;
+
+  uint32_t zero = 0;
+  uint64_t tmp_0 = (uint64_t)(zero - (uint32_t)(under_0 ? 1 : 0));
+  res_0 -= tmp_0;
+
+  uint64_t tmp_1 = (c << 32) - c;
+
+  uint64_t res_1 = res_0 + tmp_1;
+  bool over_0 = res_0 > UINT64_MAX - tmp_1;
+
+  uint64_t tmp_2 = (uint64_t)(zero - (uint32_t)(over_0 ? 1 : 0));
+  uint64_t res = res_1 + tmp_2;
+
+  return res;
+}
+
+// Modular exponentiation of prime field element by unsigned integer
+//
+// Note: operands doesn't necessarily need to ∈ F_p
+//
+// Return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
+static inline uint64_t
+ff_p_pow(uint64_t a, const uint64_t b)
+{
+  if (b == 0) {
+    return 1;
+  }
+
+  if (b == 1) {
+    return a;
+  }
+
+  if (a == 0) {
+    return 0;
+  }
+
+  uint64_t r = b & 0b1 ? a : 1;
+  for (uint8_t i = 1; i < 64 - std::countl_zero(b); i++) {
+    a = ff_p_mult(a, a);
+    if ((b >> i) & 0b1) {
+      r = ff_p_mult(r, a);
+    }
+  }
+  return r;
+}
+
+// Finds multiplicative inverse of field element, given that it's
+// not additive identity
+//
+// Note: if operand is not ∈ F_p, it's made so by performing
+// modulo operation
+//
+// This function uses the fact a ** -1 = 1 / a = a ** (p - 2) ( mod p )
+// where p = prime field modulas
+//
+// It raises operand to (p - 2)-th power, which is multiplicative
+// inverse of operand
+//
+// Return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
+static inline uint64_t
+ff_p_inv(uint64_t a)
+{
+  if (a >= MOD) {
+    a -= MOD;
+  }
+
+  if (a == 0) {
+    // ** no multiplicative inverse of additive identity **
+    //
+    // I'm not throwing an exception from here, because
+    // this function is supposed to be invoked from
+    // kernel body, where exception throwing is not (yet) allowed !
+    return 0;
+  }
+
+  const uint64_t exp = MOD - 2;
+  return ff_p_pow(a, exp);
+}
+
+// Modular division of one prime field element by another one
+//
+// Note: operands doesn't necessarily need to ∈ F_p
+//
+// It computes a * (b ** -1), uses already defined multiplicative
+// inverse finder function
+//
+// Return value may ∉ F_p, it's function invoker's
+// responsibility to perform ret % MOD
+static inline uint64_t
+ff_p_div(uint64_t a, uint64_t b)
+{
+  if (b == 0) {
+    // ** no multiplicative inverse of additive identity **
+    //
+    // I'm not throwing an exception from here, because
+    // this function is supposed to be invoked from
+    // kernel body, where exception throwing is not (yet) allowed !
+    return 0;
+  }
+
+  if (a == 0) {
+    return 0;
+  }
+
+  uint64_t b_inv = ff_p_inv(b);
+  return ff_p_mult(a, b_inv);
+}
