@@ -19,7 +19,7 @@ to_canonical(const uint64_t a)
 
 // Modular addition of two prime field elements
 //
-// Note: operands doesn't necessarily need to ∈ F_p but second operand will be
+// Note: operands doesn't necessarily need to ∈ F_p, but second operand will be
 // converted to canonical representation
 //
 // Return value may ∉ F_p, it's function invoker's responsibility to convert it
@@ -44,7 +44,7 @@ add(const uint64_t a, uint64_t b)
 
 // Modular subtraction of two prime field elements
 //
-// Note: operands doesn't necessarily need to ∈ F_p but second operand will be
+// Note: operands doesn't necessarily need to ∈ F_p, but second operand will be
 // converted to canonical representation
 //
 // Return value may ∉ F_p, it's function invoker's responsibility to convert it
@@ -96,39 +96,36 @@ mul_hi(const uint64_t a, const uint64_t b)
 
 // Modular mulitiplication of two prime field elements
 //
-// Note: operands doesn't necessarily need to ∈ F_p
-// but second operand will be made `b % MOD`
+// Note: operands doesn't necessarily need to ∈ F_p, but second operand will be
+// converted to canonical representation
 //
-// Return value may ∉ F_p, it's function invoker's
-// responsibility to perform ret % MOD
+// Return value may ∉ F_p, it's function invoker's responsibility to convert it
+// to canonical representation
 static inline uint64_t
-mult(uint64_t a, uint64_t b)
+mult(const uint64_t a, uint64_t b)
 {
-  if (b >= MOD) {
-    b -= MOD;
-  }
+  b = to_canonical(b);
 
-  uint64_t ab = a * b;
-  uint64_t cd = mul_hi(a, b);
-  uint64_t c = cd & 0x00000000ffffffff;
-  uint64_t d = cd >> 32;
+  const uint64_t ab = a * b;
+  const uint64_t cd = mul_hi(a, b);
 
-  uint64_t res_0 = ab - d;
-  bool under_0 = ab < d;
+  const uint64_t c = cd & static_cast<uint64_t>(UINT32_MAX);
+  const uint64_t d = cd >> 32;
 
-  uint32_t zero = 0;
-  uint64_t tmp_0 = (uint64_t)(zero - (uint32_t)(under_0 ? 1 : 0));
-  res_0 -= tmp_0;
+  const uint64_t res0 = ab - d;
+  const bool under0 = ab < d;
 
-  uint64_t tmp_1 = (c << 32) - c;
+  const uint64_t t0 = static_cast<uint64_t>(0u - static_cast<uint32_t>(under0));
 
-  uint64_t res_1 = res_0 + tmp_1;
-  bool over_0 = res_0 > UINT64_MAX - tmp_1;
+  const uint64_t res1 = res0 - t0;
+  const uint64_t t1 = (c << 32) - c;
 
-  uint64_t tmp_2 = (uint64_t)(zero - (uint32_t)(over_0 ? 1 : 0));
-  uint64_t res = res_1 + tmp_2;
+  const uint64_t res2 = res1 + t1;
+  const bool over0 = res1 > UINT64_MAX - t1;
 
-  return res;
+  const uint64_t t2 = static_cast<uint64_t>(0u - static_cast<uint32_t>(over0));
+
+  return res2 + t2;
 }
 
 // Modular exponentiation of prime field element by unsigned integer
