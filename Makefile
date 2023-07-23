@@ -6,6 +6,22 @@ SYCLCUDAFLAGS = -fsycl -fsycl-targets=nvptx64-nvidia-cuda
 INCLUDES = -I./include
 PROG = run
 
+all: test_all
+
+test/a.out: test/main.cpp include/*.hpp
+	g++ -std=c++20 -Wall -Wextra -pedantic -O3 -I ./include $< -o $@
+
+test_all: test/a.out
+	./$<
+
+bench/a.out: bench/main.cpp include/*.hpp
+	# make sure you've google-benchmark globally installed;
+	# see https://github.com/google/benchmark/tree/60b16f1#installation
+	g++ -std=c++20 -Wall -Wextra -pedantic -O3 -I ./include $< -lbenchmark -o $@
+
+benchmark: bench/a.out
+	./$<
+
 # make file invoker may set shell variable DEVICE to one of possible values {cpu,gpu,host}
 # but if nothing is set, `default` is used
 #
@@ -52,7 +68,7 @@ main.o: main.cpp include/bench_rescue_prime.hpp include/bench_ntt.hpp
 	$(CXX) $(CXXFLAGS) $(SYCLFLAGS) $(DFLAGS) -c $^ $(INCLUDES)
 
 clean:
-	find . -name '*.o' -o -name 'run' -o -name 'a.out' -o -name '*.gch' -o -name 'test' -o  -name '__pycache__' -o -name 'lib*.so' | xargs rm -rf
+	find . -name '*.o' -o -name 'run' -o -name 'a.out' -o -name '*.gch' -o  -name '__pycache__' -o -name 'lib*.so' | xargs rm -rf
 
 format:
 	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i --style=Mozilla
